@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Request
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from pythonjsonlogger import json
 import logging
@@ -32,6 +33,10 @@ async def chat_interaction(request: Request):
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
+
+@app.get("/", response_class=FileResponse)
+async def get_root():
+    return FileResponse("static/index.html")
 
 if __name__ == "__main__":
     import uvicorn

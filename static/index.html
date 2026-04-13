@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Run-Run-Rest</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a; /* Tailwind slate-900 */
+            color: #f8fafc; /* Tailwind slate-50 */
+        }
+    </style>
+</head>
+<body class="h-screen w-full flex flex-col items-center justify-center p-4">
+    <div class="w-full max-w-2xl h-full max-h-[800px] bg-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col border border-slate-700">
+        
+        <!-- Header -->
+        <div class="p-6 border-b border-slate-700 bg-slate-800/50 backdrop-blur-sm">
+            <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">Run-Run-Rest</h1>
+            <p class="text-slate-400 text-sm mt-1">Agentic Fitness Harness</p>
+        </div>
+
+        <!-- Chat Log Area -->
+        <div id="chat-log" class="flex-1 overflow-y-auto p-6 space-y-4">
+            <!-- Example Agent Message -->
+            <div class="flex items-start max-w-[80%]">
+                <div class="bg-indigo-600/20 border border-indigo-500/30 text-indigo-100 rounded-2xl rounded-tl-none px-4 py-3 text-sm">
+                    Welcome to your autonomous fitness coach. How was your run today?
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-4 bg-slate-800 border-t border-slate-700">
+            <div class="flex items-end gap-3 rounded-xl bg-slate-900/50 p-2 border border-slate-700 focus-within:border-indigo-500/50 focus-within:ring-1 focus-within:ring-indigo-500/50 transition-all">
+                <textarea 
+                    id="chat-input"
+                    class="w-full bg-transparent text-slate-200 px-3 py-2 outline-none resize-none placeholder:text-slate-500 text-sm max-h-32 min-h-[44px]"
+                    placeholder="Type your message..."
+                    rows="1"
+                ></textarea>
+                <button 
+                    id="submit-btn" 
+                    class="bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg px-4 py-2.5 text-sm font-medium transition-colors shadow-lg shadow-indigo-600/20 active:scale-95 disabled:opacity-50 flex-shrink-0"
+                >
+                    Send
+                </button>
+            </div>
+        </div>
+        
+    </div>
+</body>
+</html>
