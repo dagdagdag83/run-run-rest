@@ -1,0 +1,44 @@
+from typing import Protocol, Any, Dict, Optional
+
+class Storage(Protocol):
+    async def get(self, collection: str, doc_id: str) -> Optional[Dict[str, Any]]: ...
+    async def put(self, collection: str, doc_id: str, data: Dict[str, Any]) -> None: ...
+    async def delete(self, collection: str, doc_id: str) -> None: ...
+
+class InMemoryStorage:
+    def __init__(self):
+        self._data: Dict[str, Dict[str, Dict[str, Any]]] = {}
+
+    async def get(self, collection: str, doc_id: str) -> Optional[Dict[str, Any]]:
+        return self._data.get(collection, {}).get(doc_id)
+
+    async def put(self, collection: str, doc_id: str, data: Dict[str, Any]) -> None:
+        if collection not in self._data:
+            self._data[collection] = {}
+        # Store a copy of the data to mimic serialization/deserialization behavior of a real DB
+        # and prevent accidental state mutation in memory
+        self._data[collection][doc_id] = data.copy()
+
+    async def delete(self, collection: str, doc_id: str) -> None:
+        if collection in self._data and doc_id in self._data[collection]:
+            del self._data[collection][doc_id]
+
+class FirestoreStorage:
+    def __init__(self, project: str = "run-run-rest", database: str = "run-run-rest-main-db"):
+        from google.cloud import firestore
+        self._db = firestore.AsyncClient(project=project, database=database)
+
+    async def get(self, collection: str, doc_id: str) -> Optional[Dict[str, Any]]:
+        doc_ref = self._db.collection(collection).document(doc_id)
+        doc = await doc_ref.get()
+        if doc.exists:
+            return doc.to_dict()
+        return None
+
+    async def put(self, collection: str, doc_id: str, data: Dict[str, Any]) -> None:
+        doc_ref = self._db.collection(collection).document(doc_id)
+        await doc_ref.set(data)
+        
+    async def delete(self, collection: str, doc_id: str) -> None:
+        doc_ref = self._db.collection(collection).document(doc_id)
+        await doc_ref.delete()

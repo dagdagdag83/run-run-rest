@@ -80,8 +80,8 @@
                     document.getElementById('app-content').classList.remove('hidden');
                     document.getElementById('app-content').classList.add('flex');
                     
-                    // Display user info in header
-                    const userName = data.user.name || data.user.preferred_username || 'Athlete';
+                    // Display first name securely
+                    const userName = data.user.given_name || (data.user.name ? data.user.name.split(' ')[0] : null) || data.user.preferred_username || 'Athlete';
                     document.getElementById('auth-section').innerHTML = `
                         <div class="flex flex-col items-end">
                             <span class="text-slate-300 font-medium">Hi, ${userName}</span>

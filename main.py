@@ -8,15 +8,7 @@ from fastapi.responses import FileResponse, RedirectResponse, JSONResponse
 from starlette.middleware.sessions import SessionMiddleware
 from authlib.integrations.starlette_client import OAuth
 from pydantic import BaseModel
-from pythonjsonlogger import json
-import logging
-# Setup JSON logger for stdout (GCP compatible)
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
-logHandler = logging.StreamHandler()
-formatter = json.JsonFormatter()
-logHandler.setFormatter(formatter)
-logger.addHandler(logHandler)
+from logger import logger
 
 app = FastAPI(title="Run-Run-Rest", description="Agentic Fitness Harness")
 app.add_middleware(SessionMiddleware, secret_key=os.environ.get("SESSION_SECRET_KEY", "fallback-secret"))
@@ -38,12 +30,12 @@ class ChatPayload(BaseModel):
 
 @app.post("/webhook")
 async def receive_webhook(request: Request):
-    logger.info("Received webhook")
+    logger.info("Received webhook", request=request)
     return {"status": "ok", "message": "webhook received"}
 
 @app.post("/chat")
 async def chat_interaction(request: Request):
-    logger.info("Received chat interaction")
+    logger.info("Received chat interaction", request=request)
     return {"status": "ok", "response": "mock response"}
 
 @app.get("/health")
@@ -63,11 +55,16 @@ async def login(request: Request):
 @app.get("/auth/callback")
 async def auth_callback(request: Request):
     token = await oauth.zitadel.authorize_access_token(request)
-    logger.info(f"Zitadel OAuth Token Received: {token}")
-    user = token.get('userinfo')
-    logger.debug(f"Zitadel Userinfo: {user}")
-    if user:
-        request.session['user'] = user
+    logger.info("Zitadel OAuth Token Received", request=request, extra={"token": token})
+    
+    # Authlib automatically cryptographically verifies and decodes the `id_token` 
+    # during `authorize_access_token` and maps the claims into the 'userinfo' dictionary key.
+    # This is purely local and does NOT trigger a redundant network call!
+    id_token_claims = token.get('userinfo')
+    logger.debug("Decoded ID Token Claims", request=request, extra={"claims": id_token_claims})
+    
+    if id_token_claims:
+        request.session['user'] = id_token_claims
     return RedirectResponse(url='/')
 
 @app.get("/logout")
