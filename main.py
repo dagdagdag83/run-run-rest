@@ -9,6 +9,14 @@ from starlette.middleware.sessions import SessionMiddleware
 from authlib.integrations.starlette_client import OAuth
 from pydantic import BaseModel
 from logger import logger
+from storage import InMemoryStorage, FirestoreStorage
+import os
+
+# Select Database based on environment variable (set natively in GCP Cloud Run)
+if os.environ.get("ENVIRONMENT") == "production":
+    db = FirestoreStorage()
+else:
+    db = InMemoryStorage()
 
 app = FastAPI(title="Run-Run-Rest", description="Agentic Fitness Harness")
 app.add_middleware(SessionMiddleware, secret_key=os.environ.get("SESSION_SECRET_KEY", "fallback-secret"))
@@ -65,6 +73,21 @@ async def auth_callback(request: Request):
     
     if id_token_claims:
         request.session['user'] = id_token_claims
+        user_id = id_token_claims.get('sub')
+        if user_id:
+            logger.info("Upserting user into storage", request=request, extra={"user_id": user_id})
+            
+            # Check for existing structure to conditionally add defaults
+            existing_user = await db.get("users", user_id)
+            data = id_token_claims.copy()
+            
+            if not existing_user:
+                data["selected_persona"] = "Sarcastic Coach"
+                data["active_goals"] = []
+                
+            # Upsert using set(..., merge=True) mechanics
+            await db.put("users", user_id, data, merge=True)
+
     return RedirectResponse(url='/')
 
 @app.get("/logout")

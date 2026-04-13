@@ -2,7 +2,7 @@ from typing import Protocol, Any, Dict, Optional
 
 class Storage(Protocol):
     async def get(self, collection: str, doc_id: str) -> Optional[Dict[str, Any]]: ...
-    async def put(self, collection: str, doc_id: str, data: Dict[str, Any]) -> None: ...
+    async def put(self, collection: str, doc_id: str, data: Dict[str, Any], merge: bool = False) -> None: ...
     async def delete(self, collection: str, doc_id: str) -> None: ...
 
 class InMemoryStorage:
@@ -12,12 +12,15 @@ class InMemoryStorage:
     async def get(self, collection: str, doc_id: str) -> Optional[Dict[str, Any]]:
         return self._data.get(collection, {}).get(doc_id)
 
-    async def put(self, collection: str, doc_id: str, data: Dict[str, Any]) -> None:
+    async def put(self, collection: str, doc_id: str, data: Dict[str, Any], merge: bool = False) -> None:
         if collection not in self._data:
             self._data[collection] = {}
         # Store a copy of the data to mimic serialization/deserialization behavior of a real DB
         # and prevent accidental state mutation in memory
-        self._data[collection][doc_id] = data.copy()
+        if merge and doc_id in self._data[collection]:
+            self._data[collection][doc_id].update(data.copy())
+        else:
+            self._data[collection][doc_id] = data.copy()
 
     async def delete(self, collection: str, doc_id: str) -> None:
         if collection in self._data and doc_id in self._data[collection]:
@@ -35,9 +38,9 @@ class FirestoreStorage:
             return doc.to_dict()
         return None
 
-    async def put(self, collection: str, doc_id: str, data: Dict[str, Any]) -> None:
+    async def put(self, collection: str, doc_id: str, data: Dict[str, Any], merge: bool = False) -> None:
         doc_ref = self._db.collection(collection).document(doc_id)
-        await doc_ref.set(data)
+        await doc_ref.set(data, merge=merge)
         
     async def delete(self, collection: str, doc_id: str) -> None:
         doc_ref = self._db.collection(collection).document(doc_id)
