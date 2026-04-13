@@ -54,3 +54,8 @@ jobs:
           region: ${{ vars.GCP_REGION }}
           image: ${{ env.IMAGE }}
           flags: '--allow-unauthenticated'
+          env_vars: |-
+            ZITADEL_DISCOVERY_URL=${{ secrets.ZITADEL_DISCOVERY_URL }}
+            ZITADEL_CLIENT_ID=${{ secrets.ZITADEL_CLIENT_ID }}
+            ZITADEL_CLIENT_SECRET=${{ secrets.ZITADEL_CLIENT_SECRET }}
+            SESSION_SECRET_KEY=${{ secrets.SESSION_SECRET_KEY }}
