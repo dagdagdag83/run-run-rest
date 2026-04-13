@@ -22,5 +22,8 @@ COPY . /app
 # Re-sync to install the application and update state
 RUN uv sync --frozen
 
+# Cloud Run injects the PORT environment variable (default 8080)
+ENV PORT=8080
+
 # Execute server
-CMD ["uv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "uv run uvicorn main:app --host 0.0.0.0 --port $PORT"]
