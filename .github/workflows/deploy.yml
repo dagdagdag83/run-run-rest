@@ -42,8 +42,7 @@ jobs:
       - name: Build OCI Image with pycontainer-build
         run: |
           IMAGE_PATH="${{ vars.GAR_LOCATION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GAR_REPOSITORY }}/runrun-rest:${{ github.sha }}"
-          uv run pycontainer build --tag $IMAGE_PATH --context . --include-deps
-          docker push $IMAGE_PATH
+          uv run pycontainer build --tag $IMAGE_PATH --context . --include-deps --push
           echo "IMAGE=$IMAGE_PATH" >> $GITHUB_ENV
 
       - name: Deploy to Cloud Run
