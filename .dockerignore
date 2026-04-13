@@ -1,0 +1,17 @@
+.git
+.gitignore
+.github
+
+.venv
+__pycache__
+*.pyc
+
+.vscode
+.idea
+
+tests
+.pytest_cache
+docs
+implementation_plan.md
+task.md
+walkthrough.md

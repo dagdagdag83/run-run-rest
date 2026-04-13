@@ -7,7 +7,7 @@ An AI-driven fitness tracker operating as an autonomous coach. It ingests exerci
 * **Core:** Python 3.14, `uv` (package manager), FastAPI (backend & static UI).
 * **AI & Infrastructure:** Google Gemini API, Google Cloud Run (serverless container), Google Cloud Firestore (NoSQL).
 * **Integrations:** Zitadel (Auth), Strava API (webhooks).
-* **DevOps:** `pycontainer-build` (Dockerfile-free containerization), `python-json-logger` (GCP-compatible stdout logging).
+* **DevOps:** Standard `Dockerfile`, `python-json-logger` (GCP-compatible stdout logging).
 
 ## 3. Core Principles
 * **KISS:** Single container, single database. No complex frontend frameworks or layered architectures.

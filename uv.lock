@@ -152,11 +152,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pycontainer-build"
-version = "0.3.1"
-source = { git = "https://github.com/spboyer/pycontainer-build.git#628f62340b509102b8820605a750dc158b265cf4" }
-
-[[package]]
 name = "pydantic"
 version = "2.13.0"
 source = { registry = "https://pypi.org/simple" }
@@ -264,7 +259,6 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "fastapi" },
-    { name = "pycontainer-build" },
     { name = "pydantic" },
     { name = "python-json-logger" },
     { name = "uvicorn" },
@@ -280,7 +274,6 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "fastapi", specifier = ">=0.135.3" },
-    { name = "pycontainer-build", git = "https://github.com/spboyer/pycontainer-build.git" },
     { name = "pydantic", specifier = ">=2.13.0" },
     { name = "python-json-logger", specifier = ">=4.1.0" },
     { name = "uvicorn", specifier = ">=0.44.0" },

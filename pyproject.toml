@@ -6,14 +6,10 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "fastapi>=0.135.3",
-    "pycontainer-build",
     "pydantic>=2.13.0",
     "python-json-logger>=4.1.0",
     "uvicorn>=0.44.0",
 ]
-
-[tool.uv.sources]
-pycontainer-build = { git = "https://github.com/spboyer/pycontainer-build.git" }
 
 [dependency-groups]
 dev = [
