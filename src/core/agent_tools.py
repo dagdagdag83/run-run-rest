@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from dependencies import db
+from .dependencies import db
 
 record_core_memory_tool = {
     "function_declarations": [

@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Request, Depends
 from google.genai import types
-from models import ChatPayload
-from personas import get_persona, build_system_prompt
-from dependencies import db, ai_client, get_current_user
-from logger import logger
-from agent_tools import (
+from .models import ChatPayload
+from src.core.personas import get_persona, build_system_prompt
+from src.core.dependencies import db, ai_client, get_current_user
+from src.core.logger import logger
+from src.core.agent_tools import (
     AVAILABLE_TOOLS, 
     save_core_memory, save_milestone,
     get_core_memories, get_latest_core_memory,

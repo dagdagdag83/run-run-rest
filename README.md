@@ -32,7 +32,7 @@ We keep things extremely simple. Your local runs will dynamically detect your Go
 5. **Run the server:**
    Use the built-in `uv` command to run the application entrypoint. This automatically resolves your `pyproject.toml` dependencies and sets up an isolated `.venv`.
    ```powershell
-   uv run main.py
+   uv run src/main.py
    ```
    You should see the application spin up on `http://localhost:8000`! 🚀
 
