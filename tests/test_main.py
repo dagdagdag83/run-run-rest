@@ -6,7 +6,11 @@ os.environ['SESSION_SECRET_KEY'] = 'test-secret'
 os.environ['ZITADEL_DISCOVERY_URL'] = 'https://test/.well-known'
 os.environ['ZITADEL_CLIENT_ID'] = 'test'
 os.environ['ZITADEL_CLIENT_SECRET'] = 'test'
-from main import app
+
+# Prevent any real external connections during FastAPI initialization
+with patch('google.auth.default', side_effect=Exception('Mocked for tests')), \
+     patch('google.genai.Client', side_effect=Exception('Mocked for tests')):
+    from main import app
 
 @pytest.mark.asyncio
 async def test_webhook_endpoint():
