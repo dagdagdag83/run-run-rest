@@ -64,3 +64,20 @@ async def test_put_no_merge(storage: Storage):
         "name": "Updated Name",
         "new_field": True
     }
+
+@pytest.mark.asyncio
+async def test_list_and_cap(storage: Storage):
+    await storage.put("col", "1", {"time": 1, "data": "a"})
+    await storage.put("col", "2", {"time": 2, "data": "b"})
+    await storage.put("col", "3", {"time": 3, "data": "c"})
+    
+    # Test sort descending
+    res = await storage.list("col", order_by="time", descending=True)
+    assert len(res) == 3
+    assert res[0]["data"] == "c"
+    assert res[2]["data"] == "a"
+    
+    # Test limit
+    res_limit = await storage.list("col", limit=1, order_by="time", descending=True)
+    assert len(res_limit) == 1
+    assert res_limit[0]["data"] == "c"

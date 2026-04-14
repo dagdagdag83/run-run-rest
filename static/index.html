@@ -115,15 +115,36 @@
             messages.forEach(msg => {
                 const isUser = msg.role === 'user';
                 const wrapper = document.createElement('div');
-                wrapper.className = `flex items-start max-w-[90%] ${isUser ? 'ml-auto' : ''}`;
+                wrapper.className = `flex flex-col max-w-[90%] ${isUser ? 'ml-auto items-end' : 'items-start'}`;
+                
+                let displayTime = '';
+                let contentText = msg.content;
+                
+                // Extract prepended UTC timestamp if present (e.g., "[2026-04-14 13:34] ")
+                const timeMatch = contentText.match(/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2})\]\s*/);
+                if (timeMatch) {
+                    const utcDateStr = timeMatch[1].replace(' ', 'T') + ':00Z';
+                    const dateObj = new Date(utcDateStr);
+                    if (!isNaN(dateObj)) {
+                        displayTime = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        contentText = contentText.substring(timeMatch[0].length);
+                    }
+                }
+                
+                if (displayTime) {
+                    const timeEl = document.createElement('span');
+                    timeEl.className = "text-[10px] text-slate-500 mb-1 px-1";
+                    timeEl.textContent = displayTime;
+                    wrapper.appendChild(timeEl);
+                }
                 
                 const bubble = document.createElement('div');
                 if (isUser) {
                     bubble.className = "bg-slate-700 text-slate-100 rounded-2xl rounded-tr-none px-4 py-3 text-sm";
-                    bubble.textContent = msg.content;
+                    bubble.textContent = contentText;
                 } else {
                     bubble.className = "bg-indigo-600/20 border border-indigo-500/30 text-indigo-100 rounded-2xl rounded-tl-none px-6 py-4 text-sm prose prose-invert prose-sm max-w-none";
-                    bubble.innerHTML = marked.parse(msg.content);
+                    bubble.innerHTML = marked.parse(contentText);
                 }
                 
                 wrapper.appendChild(bubble);
@@ -140,9 +161,13 @@
             submitBtn.disabled = true;
             
             // Optimistic update
+            const localDisplayTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             const userWrapper = document.createElement('div');
-            userWrapper.className = 'flex items-start max-w-[90%] ml-auto';
-            userWrapper.innerHTML = `<div class="bg-slate-700 text-slate-100 rounded-2xl rounded-tr-none px-4 py-3 text-sm">${text.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>`;
+            userWrapper.className = 'flex flex-col max-w-[90%] ml-auto items-end';
+            userWrapper.innerHTML = `
+                <span class="text-[10px] text-slate-500 mb-1 px-1">${localDisplayTime}</span>
+                <div class="bg-slate-700 text-slate-100 rounded-2xl rounded-tr-none px-4 py-3 text-sm">${text.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>
+            `;
             chatLog.appendChild(userWrapper);
 
             // Wait state bubble

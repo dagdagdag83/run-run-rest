@@ -9,7 +9,7 @@ try:
         BASE_SYSTEM_PROMPT_TEMPLATE = f.read()
 except FileNotFoundError:
     # Fallback in case the file goes missing
-    BASE_SYSTEM_PROMPT_TEMPLATE = "{{PERSONA_PROMPT}}\nUser: {{FIRST_NAME}}\nGoals: {{ACTIVE_GOALS}}"
+    BASE_SYSTEM_PROMPT_TEMPLATE = "{{PERSONA_PROMPT}}\nUser: {{FIRST_NAME}}\nGoals: {{ACTIVE_GOALS}}\nCurrent Time: {{CURRENT_TIMESTAMP}}"
 
 PERSONAS = {
     "supportive-realist": PersonaModel(
@@ -22,7 +22,7 @@ PERSONAS = {
 def get_persona(persona_id: str) -> PersonaModel:
     return PERSONAS.get(persona_id, PERSONAS["supportive-realist"])
 
-def build_system_prompt(persona: PersonaModel, first_name: str, active_goals: list[str] | str | None = None) -> str:
+def build_system_prompt(persona: PersonaModel, first_name: str, current_timestamp: str, active_goals: list[str] | str | None = None) -> str:
     # Format active goals gracefully
     if not active_goals:
         goals_str = "None specified"
@@ -35,5 +35,6 @@ def build_system_prompt(persona: PersonaModel, first_name: str, active_goals: li
     prompt = prompt.replace("{{PERSONA_PROMPT}}", persona.system_prompt)
     prompt = prompt.replace("{{FIRST_NAME}}", first_name)
     prompt = prompt.replace("{{ACTIVE_GOALS}}", goals_str)
+    prompt = prompt.replace("{{CURRENT_TIMESTAMP}}", current_timestamp)
     
     return prompt

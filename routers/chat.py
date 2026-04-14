@@ -4,6 +4,13 @@ from models import ChatPayload
 from personas import get_persona, build_system_prompt
 from dependencies import db, ai_client, get_current_user
 from logger import logger
+from agent_tools import (
+    AVAILABLE_TOOLS, 
+    save_core_memory, save_milestone,
+    get_core_memories, get_latest_core_memory,
+    get_milestones, get_latest_milestone
+)
+from datetime import datetime, timezone
 
 router = APIRouter()
 
@@ -22,6 +29,9 @@ async def chat_interaction(payload: ChatPayload, request: Request, user: dict = 
         
     messages = session_data.get("messages", [])
     
+    current_timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
+    payload.message = f"[{current_timestamp}] {payload.message}"
+    
     # Store the user message
     messages.append({"role": "user", "content": payload.message})
     
@@ -34,15 +44,107 @@ async def chat_interaction(payload: ChatPayload, request: Request, user: dict = 
                     types.Content(role=role, parts=[types.Part.from_text(text=msg["content"])])
                 )
                 
-            sys_instruct = build_system_prompt(persona, first_name, active_goals)
+            sys_instruct = build_system_prompt(persona, first_name, current_timestamp, active_goals)
+            
+            # Build config using tools from our agent_tools file
+            config = types.GenerateContentConfig(
+                system_instruction=sys_instruct,
+                tools=AVAILABLE_TOOLS,
+            )
             
             response = await ai_client.aio.models.generate_content(
                 model='gemini-3.1-flash-lite-preview',
                 contents=genai_contents,
-                config=types.GenerateContentConfig(
-                    system_instruction=sys_instruct,
-                )
+                config=config
             )
+            
+            if response.function_calls:
+                # Add model's tool calls to the history context
+                genai_contents.append(response.candidates[0].content)
+                
+                function_response_parts = []
+                for call in response.function_calls:
+                    if call.name == "record_core_memory":
+                        memory_text = call.args.get("memory_text")
+                        if memory_text:
+                            await save_core_memory(sub, memory_text)
+                            logger.info("Tool executed: record_core_memory", extra={"user_id": sub, "memory_text": memory_text})
+                            
+                        function_response_parts.append(
+                            types.Part.from_function_response(
+                                name="record_core_memory",
+                                response={"status": "success"}
+                            )
+                        )
+                    elif call.name == "record_milestone":
+                        milestone_text = call.args.get("milestone_text")
+                        if milestone_text:
+                            await save_milestone(sub, milestone_text)
+                            logger.info("Tool executed: record_milestone", extra={"user_id": sub, "milestone_text": milestone_text})
+                            
+                        function_response_parts.append(
+                            types.Part.from_function_response(
+                                name="record_milestone",
+                                response={"status": "success"}
+                            )
+                        )
+                    elif call.name == "retrieve_core_memories":
+                        max_results = call.args.get("max_results")
+                        # cast max_results to int if it exists, since args might give a float
+                        try:
+                            max_results = int(max_results) if max_results is not None else None
+                        except ValueError:
+                            max_results = None
+                        memories = await get_core_memories(sub, max_results)
+                        logger.info("Tool executed: retrieve_core_memories", extra={"user_id": sub})
+                        function_response_parts.append(
+                            types.Part.from_function_response(
+                                name="retrieve_core_memories",
+                                response={"memories": memories}
+                            )
+                        )
+                    elif call.name == "retrieve_latest_core_memory":
+                        memory = await get_latest_core_memory(sub)
+                        logger.info("Tool executed: retrieve_latest_core_memory", extra={"user_id": sub})
+                        function_response_parts.append(
+                            types.Part.from_function_response(
+                                name="retrieve_latest_core_memory",
+                                response={"memory": memory}
+                            )
+                        )
+                    elif call.name == "retrieve_milestones":
+                        max_results = call.args.get("max_results")
+                        try:
+                            max_results = int(max_results) if max_results is not None else None
+                        except ValueError:
+                            max_results = None
+                        milestones = await get_milestones(sub, max_results)
+                        logger.info("Tool executed: retrieve_milestones", extra={"user_id": sub})
+                        function_response_parts.append(
+                            types.Part.from_function_response(
+                                name="retrieve_milestones",
+                                response={"milestones": milestones}
+                            )
+                        )
+                    elif call.name == "retrieve_latest_milestone":
+                        milestone = await get_latest_milestone(sub)
+                        logger.info("Tool executed: retrieve_latest_milestone", extra={"user_id": sub})
+                        function_response_parts.append(
+                            types.Part.from_function_response(
+                                name="retrieve_latest_milestone",
+                                response={"milestone": milestone}
+                            )
+                        )
+                
+                genai_contents.append(types.Content(role="function", parts=function_response_parts))
+                
+                # Resubmit with function results to get final conversational response
+                response = await ai_client.aio.models.generate_content(
+                    model='gemini-3.1-flash-lite-preview',
+                    contents=genai_contents,
+                    config=config
+                )
+                
             bot_text = response.text or "I'm sorry, I couldn't generate a response."
             messages.append({"role": "assistant", "content": bot_text})
         except Exception as e:

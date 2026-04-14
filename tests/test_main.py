@@ -51,7 +51,7 @@ async def test_chat_endpoint_success():
         assert "messages" in data
         assert len(data["messages"]) >= 2
         assert data["messages"][-2]["role"] == "user"
-        assert data["messages"][-2]["content"] == "hello"
+        assert data["messages"][-2]["content"].endswith("hello")
         assert data["messages"][-1]["role"] == "assistant"
         assert "unavailable" in data["messages"][-1]["content"]
         assert data["context_loaded"] is True
