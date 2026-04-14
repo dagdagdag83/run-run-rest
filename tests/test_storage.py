@@ -39,7 +39,7 @@ async def test_delete_nonexistent(storage: Storage):
 @pytest.mark.asyncio
 async def test_put_merge(storage: Storage):
     # Initial put
-    await storage.put("users", "user1", {"name": "Test User", "selected_persona": "Sarcastic Coach"})
+    await storage.put("users", "user1", {"name": "Test User", "selected_persona": "supportive-realist"})
     
     # Merge put
     await storage.put("users", "user1", {"name": "Updated Name", "new_field": True}, merge=True)
@@ -47,14 +47,14 @@ async def test_put_merge(storage: Storage):
     result = await storage.get("users", "user1")
     assert result == {
         "name": "Updated Name",
-        "selected_persona": "Sarcastic Coach",
+        "selected_persona": "supportive-realist",
         "new_field": True
     }
 
 @pytest.mark.asyncio
 async def test_put_no_merge(storage: Storage):
     # Initial put
-    await storage.put("users", "user1", {"name": "Test User", "selected_persona": "Sarcastic Coach"})
+    await storage.put("users", "user1", {"name": "Test User", "selected_persona": "supportive-realist"})
     
     # Non-merge put
     await storage.put("users", "user1", {"name": "Updated Name", "new_field": True})

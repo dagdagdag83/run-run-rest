@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends, HTTPException
 from fastapi.responses import FileResponse, RedirectResponse, JSONResponse
 from starlette.middleware.sessions import SessionMiddleware
 from authlib.integrations.starlette_client import OAuth
@@ -19,7 +19,12 @@ else:
     db = InMemoryStorage()
 
 app = FastAPI(title="Run-Run-Rest", description="Agentic Fitness Harness")
-app.add_middleware(SessionMiddleware, secret_key=os.environ.get("SESSION_SECRET_KEY", "fallback-secret"))
+app.add_middleware(
+    SessionMiddleware, 
+    secret_key=os.environ.get("SESSION_SECRET_KEY", "fallback-secret"),
+    same_site="strict",
+    https_only=os.environ.get("ENVIRONMENT") == "production"
+)
 
 oauth = OAuth()
 oauth.register(
@@ -41,9 +46,24 @@ async def receive_webhook(request: Request):
     logger.info("Received webhook", request=request)
     return {"status": "ok", "message": "webhook received"}
 
+async def get_current_user(request: Request):
+    user = request.session.get('user')
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    sub = user.get("sub")
+    if not sub:
+        raise HTTPException(status_code=401, detail="Invalid session data")
+
+    user_data = await db.get("users", sub)
+    if not user_data:
+        raise HTTPException(status_code=401, detail="User not found")
+    
+    return user_data
+
 @app.post("/chat")
-async def chat_interaction(request: Request):
-    logger.info("Received chat interaction", request=request)
+async def chat_interaction(request: Request, user: dict = Depends(get_current_user)):
+    logger.info("Received chat interaction", request=request, extra={"user": user.get("sub")})
     return {"status": "ok", "response": "mock response"}
 
 @app.get("/health")
@@ -82,7 +102,7 @@ async def auth_callback(request: Request):
             data = id_token_claims.copy()
             
             if not existing_user:
-                data["selected_persona"] = "Sarcastic Coach"
+                data["selected_persona"] = "supportive-realist"
                 data["active_goals"] = []
                 
             # Upsert using set(..., merge=True) mechanics

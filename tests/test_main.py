@@ -1,5 +1,6 @@
 import pytest
 from httpx import AsyncClient, ASGITransport
+from unittest.mock import patch, AsyncMock
 import os
 os.environ['SESSION_SECRET_KEY'] = 'test-secret'
 os.environ['ZITADEL_DISCOVERY_URL'] = 'https://test/.well-known'
@@ -17,13 +18,32 @@ async def test_webhook_endpoint():
     assert response.json() == {"status": "ok", "message": "webhook received"}
 
 @pytest.mark.asyncio
-async def test_chat_endpoint():
+async def test_chat_endpoint_no_token():
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
     ) as ac:
         response = await ac.post("/chat", json={"message": "hello"})
-    assert response.status_code == 200
-    assert response.json() == {"status": "ok", "response": "mock response"}
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Not authenticated"}
+
+from main import get_current_user
+
+@pytest.mark.asyncio
+async def test_chat_endpoint_success():
+    async def override_get_current_user():
+        return {"name": "Test User", "sub": "user_123"}
+
+    app.dependency_overrides[get_current_user] = override_get_current_user
+    
+    try:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as ac:
+            response = await ac.post("/chat", json={"message": "hello"})
+        assert response.status_code == 200
+        assert response.json() == {"status": "ok", "response": "mock response"}
+    finally:
+        app.dependency_overrides.clear()
 
 @pytest.mark.asyncio
 async def test_root_endpoint():

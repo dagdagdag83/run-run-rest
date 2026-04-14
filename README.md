@@ -1,8 +1,82 @@
-# runrun.rest
+# 🏃‍♂️🤖 run-run-rest 
 
-Agentic Fitness Harness
+**run-run-rest** is a highly opinionated, AI-driven fitness tracker that operates as your autonomous personal coach! Designed as an agentic harness, it ingests your continuous exercise data (like from Strava), maintains deep, long-term contextual memory of your highs and lows, and chats with you through distinct personas. It's the fitness tracker that never forgets a PR, and never lets you skip leg day. 🏋️‍♂️✨
 
-## Infrastructure Configuration
+## 🚀 Core Dependencies
+
+* **[FastAPI](https://fastapi.tiangolo.com/)**: Core REST routing mechanics & static UI serving.
+* **[Authlib](https://docs.authlib.org/)**: Heavy-lifting for OpenID Connect via Zitadel.
+* **Google Cloud Firestore**: Abstracted memory persistence.
+* **[uv](https://github.com/astral-sh/uv)**: Blazing fast Python packaging and execution.
+* **Pydantic**: Robust data validation and typing.
+
+## 🛠️ Local Environment Setup
+
+We keep things extremely simple. Your local runs will securely utilize an in-memory storage mock out-of-the-box so you can work locally and offline without racking up GCP bills!
+
+1. **Get your Python right:** Ensure you have Python 3.14+ installed.
+2. **Install `uv`:** The modern, lightning-fast standard for Python environments. (e.g. `curl -LsSf https://astral.sh/uv/install.sh | sh`)
+3. **Set up your Environment Variables:** 
+   Copy the example config into a `.env` file to be picked up by the harness.
+   ```powershell
+   Copy-Item .env.example .env
+   ```
+   *Make sure you fill in valid Zitadel API details and a random `SESSION_SECRET_KEY` within the `.env` if you are testing the login UI!*
+
+4. **Run the server:**
+   Use the built-in `uv` command to run the application entrypoint. This automatically resolves your `pyproject.toml` dependencies and sets up an isolated `.venv`.
+   ```powershell
+   uv run main.py
+   ```
+   You should see the application spin up on `http://localhost:8000`! 🚀
+
+## 🧪 Testing the Chat Endpoint (PowerShell)
+
+We use secure, strict session-cookie based Auth. Here's how you can manually test the `/chat` endpoint locally using **PowerShell**:
+
+### Without Valid Auth (Expected to Fail) 🛑
+Attempting to hit the chat endpoint unauthenticated will correctly throw a `401 Unauthorized` HTTP exception.
+```powershell
+# This command expects an HTTP 401 response from FastAPI.
+try {
+    Invoke-RestMethod -Uri "http://localhost:8000/chat" -Method Post -ErrorAction Stop
+} catch {
+    Write-Host "Caught expected error: $($_.Exception.Message)" -ForegroundColor Yellow
+}
+```
+
+### With Valid Auth (Expected to Pass) ✅
+Because we are utilizing UI-bound session cookies, you need to manually hijack a valid session for CLI testing:
+1. Fire up your browser and navigate to `http://localhost:8000/`.
+2. Hit the login button to authenticate via Zitadel.
+3. Once redirected back (with a successful auth callback), open your browser Dev Tools (F12) -> Application/Storage -> Cookies.
+4. Copy the value of the `session` cookie.
+
+```powershell
+# Substitute your copied session value here
+$sessionCookie = "YOUR_COPIED_COOKIE_VALUE"
+
+# Set up the cookie header
+$headers = @{
+    "Cookie" = "session=$sessionCookie"
+}
+
+# Hit the endpoint!
+Invoke-RestMethod -Uri "http://localhost:8000/chat" -Method Post -Headers $headers -Body "{}" -ContentType "application/json"
+```
+
+## 🏗️ Automated Testing
+
+We follow Test-Driven Development (TDD) via `pytest`. We have built-in async interface mocks for storage abstractions, meaning our unit tests are completely decoupled from external latency or GCP. 
+
+To run the entire test suite:
+```powershell
+uv run pytest
+```
+
+---
+
+## ☁️ Infrastructure Configuration (CI/CD)
 
 To enable the automated deployment pipeline to Google Cloud Run via GitHub Actions, the following environment variables and secrets must be configured in your GitHub Repository settings (`Settings > Secrets and variables > Actions > Variables`):
 
@@ -14,15 +88,3 @@ To enable the automated deployment pipeline to Google Cloud Run via GitHub Actio
 | `GAR_REPOSITORY`        | The name of the Artifact Registry repository.                                                             | `run-run-rest-repo`                                       |
 | `WIF_PROVIDER`          | The full identifier of the Workload Identity Federation Provider used to authenticate GitHub Actions.     | `projects/123/locations/global/workloadIdentity...` |
 | `WIF_SERVICE_ACCOUNT`   | The email of the GCP Service Account that the workflow will impersonate via Workload Identity Federation. | `gitblah@run-run-rest.iam.gserviceaccount.com` |
-
-## Local Development
-
-1. Ensure `uv` is installed (`curl -LsSf https://astral.sh/uv/install.sh | sh`).
-2. Run tests:
-   ```bash
-   uv run pytest
-   ```
-3. Run local server:
-   ```bash
-   uv run uvicorn main:app --reload
-   ```
