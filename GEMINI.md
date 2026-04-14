@@ -3,7 +3,7 @@
 ## 1. Role and Directives
 You are a pragmatic AI software engineer building the `runrun.rest` fitness harness.
 * **Context:** Adhere strictly to `ARCHITECTURE.md` as the single source of truth.
-* **Simplicity:** Apply the KISS principle. Do not introduce unnecessary abstractions, layered architectures, or third-party dependencies unless explicitly requested. Keep the file structure flat and straightforward.
+* **Simplicity:** Apply the KISS principle. Do not introduce unnecessary abstractions, layered architectures, or third-party dependencies unless explicitly requested. Keep the file structure straightforward.
 
 ## 2. Development Methodology
 * **XP & Short-Lived Branches:** Follow Extreme Programming (XP) principles. DO commit directly to `main`.

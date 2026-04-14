@@ -12,7 +12,7 @@
 
 ## 🛠️ Local Environment Setup
 
-We keep things extremely simple. Your local runs will securely utilize an in-memory storage mock out-of-the-box so you can work locally and offline without racking up GCP bills!
+We keep things extremely simple. Your local runs will dynamically detect your Google Cloud credentials. If Application Default Credentials (ADC) are found, the harness connects to a dedicated local Firestore database (`run-run-rest-local-db`). If no credentials are found (or if they fail), it gracefully falls back to an in-memory storage mock out-of-the-box so you can work locally and offline without racking up GCP bills!
 
 1. **Get your Python right:** Ensure you have Python 3.14+ installed.
 2. **Install `uv`:** The modern, lightning-fast standard for Python environments. (e.g. `curl -LsSf https://astral.sh/uv/install.sh | sh`)
@@ -23,7 +23,13 @@ We keep things extremely simple. Your local runs will securely utilize an in-mem
    ```
    *Make sure you fill in valid Zitadel API details and a random `SESSION_SECRET_KEY` within the `.env` if you are testing the login UI!*
 
-4. **Run the server:**
+4. **Configure Google Cloud Credentials:**
+   To ensure the Gemini AI integration works locally and to persist testing data to the distinct `run-run-rest-local-db` Firestore instance, you need to acquire Application Default Credentials (ADC).
+   ```powershell
+   gcloud auth application-default login
+   ```
+
+5. **Run the server:**
    Use the built-in `uv` command to run the application entrypoint. This automatically resolves your `pyproject.toml` dependencies and sets up an isolated `.venv`.
    ```powershell
    uv run main.py
@@ -46,23 +52,34 @@ try {
 ```
 
 ### With Valid Auth (Expected to Pass) ✅
-Because we are utilizing UI-bound session cookies, you need to manually hijack a valid session for CLI testing:
+Because we are utilizing UI-bound session cookies, you need to manually hijack a valid session for CLI testing. We've created a helper endpoint to make this easy:
 1. Fire up your browser and navigate to `http://localhost:8000/`.
 2. Hit the login button to authenticate via Zitadel.
-3. Once redirected back (with a successful auth callback), open your browser Dev Tools (F12) -> Application/Storage -> Cookies.
-4. Copy the value of the `session` cookie.
+3. Once redirected back (with a successful auth callback), open a new tab and go to `http://localhost:8000/dump-cookie`.
+4. Copy the value of the `session_cookie` displayed on the page.
 
 ```powershell
 # Substitute your copied session value here
 $sessionCookie = "YOUR_COPIED_COOKIE_VALUE"
 
 # Set up the cookie header
-$headers = @{
-    "Cookie" = "session=$sessionCookie"
-}
+$headers = @{ "Cookie" = "session=$sessionCookie"}
+$body = @{ "message" = "Hello Coach! This is PowerShell testing in." } | ConvertTo-Json
 
-# Hit the endpoint!
-Invoke-RestMethod -Uri "http://localhost:8000/chat" -Method Post -Headers $headers -Body "{}" -ContentType "application/json"
+try {
+    Write-Host "Hitting /chat endpoint..." -ForegroundColor Cyan
+    $response = Invoke-RestMethod -Uri "http://localhost:8000/chat" -Method Post -Headers $headers -Body $body -ContentType "application/json"
+    
+    Write-Host "`n✅ Authentication Successful!" -ForegroundColor Green
+    Write-Host "Exchange History:" -ForegroundColor Yellow
+    $response.messages | Format-Table role, content -Wrap
+} catch {
+    Write-Host "`n🛑 Authentication Failed!" -ForegroundColor Red
+    if ($_.Exception.Response) {
+        Write-Host "Status Code: $($_.Exception.Response.StatusCode.value__)"
+    }
+    Write-Host "Message: $($_.Exception.Message)"
+}
 ```
 
 ## 🏗️ Automated Testing

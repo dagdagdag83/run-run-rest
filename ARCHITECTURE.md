@@ -10,7 +10,7 @@ An AI-driven fitness tracker operating as an autonomous coach. It ingests exerci
 * **DevOps:** Standard `Dockerfile`, `python-json-logger` (GCP-compatible stdout logging).
 
 ## 3. Core Principles
-* **KISS:** Single container, single database. No complex frontend frameworks or layered architectures.
+* **KISS:** Single container, single database. No complex frontend frameworks or layered architectures (though a flat `routers/` folder structure is permitted to organize endpoints).
 * **Statelessness:** Cloud Run instances hold no global state. Context is dynamically loaded per request and wiped.
 * **Scale-to-Zero:** Compute runs only during active chats, UI loads, or incoming webhooks.
 * **Interface/Implementor:** Abstract external services (Firestore, Zitadel, Strava, Gemini) behind interfaces.

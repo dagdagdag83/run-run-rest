@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Run-Run-Rest</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -13,8 +14,8 @@
         }
     </style>
 </head>
-<body class="h-screen w-full flex flex-col items-center justify-center p-4">
-    <div class="w-full max-w-2xl h-full max-h-[800px] bg-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col border border-slate-700">
+<body class="h-screen w-full flex flex-col items-center justify-center p-0 sm:p-4">
+    <div class="w-full max-w-7xl h-full max-h-[95vh] bg-slate-800 flex flex-col sm:rounded-2xl shadow-2xl overflow-hidden border border-slate-700">
         
         <!-- Header -->
         <div class="p-6 border-b border-slate-700 bg-slate-800/50 backdrop-blur-sm flex justify-between items-center">
@@ -38,12 +39,7 @@
         <div id="app-content" class="flex-1 flex col flex-col hidden overflow-hidden">
             <!-- Chat Log Area -->
             <div id="chat-log" class="flex-1 overflow-y-auto p-6 space-y-4">
-                <!-- Example Agent Message -->
-                <div class="flex items-start max-w-[80%]">
-                    <div class="bg-indigo-600/20 border border-indigo-500/30 text-indigo-100 rounded-2xl rounded-tl-none px-4 py-3 text-sm">
-                        Welcome to your autonomous fitness coach. How was your run today?
-                    </div>
-                </div>
+                <!-- Messages will be populated here -->
             </div>
 
             <!-- Input Area -->
@@ -67,8 +63,13 @@
         
     </div>
 
-    <!-- Auth Logic Script -->
+    <!-- Auth & Chat Logic Script -->
     <script>
+        // DOM Elements
+        const chatInput = document.getElementById('chat-input');
+        const submitBtn = document.getElementById('submit-btn');
+        const chatLog = document.getElementById('chat-log');
+    
         async function checkAuth() {
             try {
                 const response = await fetch('/api/me');
@@ -88,6 +89,19 @@
                             <a href="/logout" class="text-indigo-400 hover:text-indigo-300 text-xs mt-1 transition-colors">Logout</a>
                         </div>
                     `;
+
+                    // Fetch chat history
+                    try {
+                        const historyResp = await fetch('/chat/history');
+                        if (historyResp.ok) {
+                            const historyData = await historyResp.json();
+                            if (historyData.messages && historyData.messages.length > 0) {
+                                renderMessages(historyData.messages);
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Failed to load chat history:', e);
+                    }
                 } else {
                     // Do nothing, defaults are mapped to unauthenticated
                 }
@@ -95,6 +109,92 @@
                 console.error("Auth check failed:", error);
             }
         }
+
+        function renderMessages(messages) {
+            chatLog.innerHTML = '';
+            messages.forEach(msg => {
+                const isUser = msg.role === 'user';
+                const wrapper = document.createElement('div');
+                wrapper.className = `flex items-start max-w-[90%] ${isUser ? 'ml-auto' : ''}`;
+                
+                const bubble = document.createElement('div');
+                if (isUser) {
+                    bubble.className = "bg-slate-700 text-slate-100 rounded-2xl rounded-tr-none px-4 py-3 text-sm";
+                    bubble.textContent = msg.content;
+                } else {
+                    bubble.className = "bg-indigo-600/20 border border-indigo-500/30 text-indigo-100 rounded-2xl rounded-tl-none px-6 py-4 text-sm prose prose-invert prose-sm max-w-none";
+                    bubble.innerHTML = marked.parse(msg.content);
+                }
+                
+                wrapper.appendChild(bubble);
+                chatLog.appendChild(wrapper);
+            });
+            chatLog.scrollTop = chatLog.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const text = chatInput.value.trim();
+            if (!text) return;
+
+            chatInput.value = '';
+            submitBtn.disabled = true;
+            
+            // Optimistic update
+            const userWrapper = document.createElement('div');
+            userWrapper.className = 'flex items-start max-w-[90%] ml-auto';
+            userWrapper.innerHTML = `<div class="bg-slate-700 text-slate-100 rounded-2xl rounded-tr-none px-4 py-3 text-sm">${text.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>`;
+            chatLog.appendChild(userWrapper);
+
+            // Wait state bubble
+            const waitWrapper = document.createElement('div');
+            waitWrapper.id = "thinking-bubble";
+            waitWrapper.className = 'flex items-start max-w-[90%] mt-4';
+            waitWrapper.innerHTML = `
+                <div class="bg-indigo-600/20 border border-indigo-500/30 text-indigo-100 rounded-2xl rounded-tl-none px-4 py-3 text-sm flex items-center gap-2">
+                    <div class="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style="animation-delay: 0s"></div>
+                    <div class="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                    <div class="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
+                </div>
+            `;
+            chatLog.appendChild(waitWrapper);
+            chatLog.scrollTop = chatLog.scrollHeight;
+            
+            try {
+                // Fetch uses the session cookie automatically under same-origin
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: text })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.messages) {
+                        renderMessages(data.messages);
+                    }
+                } else if (response.status === 401) {
+                    window.location.reload(); // Re-trigger auth flow if session expired
+                } else {
+                    console.error("Failed to send message:", await response.text());
+                }
+            } catch (error) {
+                console.error("Error sending message:", error);
+            } finally {
+                submitBtn.disabled = false;
+                chatInput.focus();
+            }
+        }
+
+        // Event Listeners
+        submitBtn.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
 
         // Run authentication check on load
         checkAuth();

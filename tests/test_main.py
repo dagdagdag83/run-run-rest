@@ -26,9 +26,10 @@ async def test_chat_endpoint_no_token():
     assert response.status_code == 401
     assert response.json() == {"detail": "Not authenticated"}
 
-from main import get_current_user
+from dependencies import get_current_user
 
 @pytest.mark.asyncio
+@patch("routers.chat.ai_client", None)
 async def test_chat_endpoint_success():
     async def override_get_current_user():
         return {"name": "Test User", "sub": "user_123"}
@@ -41,7 +42,15 @@ async def test_chat_endpoint_success():
         ) as ac:
             response = await ac.post("/chat", json={"message": "hello"})
         assert response.status_code == 200
-        assert response.json() == {"status": "ok", "response": "mock response"}
+        data = response.json()
+        assert data["status"] == "ok"
+        assert "messages" in data
+        assert len(data["messages"]) >= 2
+        assert data["messages"][-2]["role"] == "user"
+        assert data["messages"][-2]["content"] == "hello"
+        assert data["messages"][-1]["role"] == "assistant"
+        assert "unavailable" in data["messages"][-1]["content"]
+        assert data["context_loaded"] is True
     finally:
         app.dependency_overrides.clear()
 
