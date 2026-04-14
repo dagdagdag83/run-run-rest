@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request, Depends
 from google.genai import types
 from models import ChatPayload
-from personas import get_persona
+from personas import get_persona, build_system_prompt
 from dependencies import db, ai_client, get_current_user
 from logger import logger
 
@@ -12,6 +12,7 @@ async def chat_interaction(payload: ChatPayload, request: Request, user: dict = 
     sub = user.get("sub")
     first_name = user.get("given_name") or user.get("name", "User")
     selected_persona_id = user.get("selected_persona", "supportive-realist")
+    active_goals = user.get("active_goals", [])
     
     persona = get_persona(selected_persona_id)
     
@@ -33,7 +34,7 @@ async def chat_interaction(payload: ChatPayload, request: Request, user: dict = 
                     types.Content(role=role, parts=[types.Part.from_text(text=msg["content"])])
                 )
                 
-            sys_instruct = f"The user's name is {first_name}.\n{persona.system_prompt}"
+            sys_instruct = build_system_prompt(persona, first_name, active_goals)
             
             response = await ai_client.aio.models.generate_content(
                 model='gemini-3.1-flash-lite-preview',
