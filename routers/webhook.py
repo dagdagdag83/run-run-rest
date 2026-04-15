@@ -18,4 +18,9 @@ async def validate_webhook(request: Request):
 
 @router.post("/webhook")
 async def receive_webhook(request: Request):
+    try:
+        body = await request.json()
+    except Exception:
+        body = await request.body()
+    logger.info(f"Webhook POST received. Body: {body}")
     return {"status": "ok", "message": "webhook received"}
