@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request, Depends
 from google.genai import types
-from .models import ChatPayload
+from src.features.chat.models import ChatPayload
 from src.core.personas import get_persona, build_system_prompt
 from src.core.dependencies import db, ai_client, get_current_user
 from src.core.logger import logger

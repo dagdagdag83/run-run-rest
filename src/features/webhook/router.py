@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request
 from src.core.logger import logger
-from .models import WebhookPayload
+from src.features.webhook.models import WebhookPayload
 
 router = APIRouter()
 

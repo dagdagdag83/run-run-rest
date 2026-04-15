@@ -5,8 +5,8 @@ from fastapi import Request, HTTPException
 from authlib.integrations.starlette_client import OAuth
 from google import genai
 
-from .logger import logger
-from .storage import InMemoryStorage, FirestoreStorage
+from src.core.logger import logger
+from src.core.storage import InMemoryStorage, FirestoreStorage
 
 # --- AI Client Initialization ---
 try:
