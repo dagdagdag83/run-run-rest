@@ -7,6 +7,12 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from starlette.middleware.sessions import SessionMiddleware
 
+import sys
+import os
+
+# Add the parent directory of 'src' to the Python path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from src.core.auth.router import router as auth_router
 from src.features.chat.router import router as chat_router
 from src.features.webhook.router import router as webhook_router
