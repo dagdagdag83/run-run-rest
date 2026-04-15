@@ -1,11 +1,8 @@
 from fastapi import APIRouter, Request
-from pydantic import BaseModel
-from logger import logger
+from src.core.logger import logger
+from .models import WebhookPayload
 
 router = APIRouter()
-
-class WebhookPayload(BaseModel):
-    pass  # To be defined
 
 @router.post("/webhook")
 async def receive_webhook(request: Request):

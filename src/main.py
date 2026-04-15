@@ -7,7 +7,15 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from starlette.middleware.sessions import SessionMiddleware
 
-from routers import auth, chat, webhook
+import sys
+import os
+
+# Add the parent directory of 'src' to the Python path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from src.core.auth.router import router as auth_router
+from src.features.chat.router import router as chat_router
+from src.features.webhook.router import router as webhook_router
 
 app = FastAPI(title="Run-Run-Rest", description="Agentic Fitness Harness")
 app.add_middleware(
@@ -17,9 +25,9 @@ app.add_middleware(
     https_only=os.environ.get("ENVIRONMENT") == "production"
 )
 
-app.include_router(auth.router)
-app.include_router(chat.router)
-app.include_router(webhook.router)
+app.include_router(auth_router)
+app.include_router(chat_router)
+app.include_router(webhook_router)
 
 @app.get("/health")
 async def health_check():
@@ -27,8 +35,8 @@ async def health_check():
 
 @app.get("/", response_class=FileResponse)
 async def get_root():
-    return FileResponse("static/index.html")
+    return FileResponse("src/static/index.html")
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("src.main:app", host="0.0.0.0", port=8000, reload=True)

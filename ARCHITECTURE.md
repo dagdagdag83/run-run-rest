@@ -10,18 +10,32 @@ An AI-driven fitness tracker operating as an autonomous coach. It ingests exerci
 * **DevOps:** Standard `Dockerfile`, `python-json-logger` (GCP-compatible stdout logging).
 
 ## 3. Core Principles
-* **KISS:** Single container, single database. No complex frontend frameworks or layered architectures (though a flat `routers/` folder structure is permitted to organize endpoints).
+* **Vertical Slice Architecture:** Code is organized by feature domains rather than technical layers. Each feature (`chat`, `webhook`) contains its own router, models, and tests. Shared utilities (auth, dependencies, storage) are managed centrally in `core`.
+* **KISS:** Single container, single database. No complex frontend frameworks or layered architectures.
 * **Statelessness:** Cloud Run instances hold no global state. Context is dynamically loaded per request and wiped.
-* **Scale-to-Zero:** Compute runs only during active chats, UI loads, or incoming webhooks.
+* **Scale-to-Zero:** Compute runs only active during active chats, UI loads, or incoming webhooks.
 * **Interface/Implementor:** Abstract external services (Firestore, Zitadel, Strava, Gemini) behind interfaces.
 * **Local Mocking:** Use in-memory mocks for external services during local development for instant, offline testing.
 
-## 4. System Flow
+## 4. Directory Structure
+```text
+src/
+├── core/                   # Shared architectural components (DB, AI Client, Auth, Models)
+│   ├── auth/               # Auth endpoints and UI flows
+│   └── tests/              # Core infrastructure tests
+├── features/               # Isolated feature domains (Vertical Slices)
+│   ├── chat/               # Conversational AI router, localized models, tests
+│   └── webhook/            # Ingestion router and tests
+├── static/                 # Served frontend files
+└── main.py                 # Application entrypoint
+```
+
+## 5. System Flow
 * **UI & Auth:** FastAPI serves `index.html`. Users log in via Zitadel. The frontend sends JWTs to the backend, which verifies them and maps the user to their Strava ID.
 * **Webhook Pipeline (Ingestion):** Strava posts data to `/webhook`. The backend strips JSON noise, injects environmental data (e.g., weather), has the AI generate a narrative, and saves the record.
 * **Chat Pipeline (Interaction):** User sends a message to `/chat`. The backend loads recent context and milestones. The AI responds using its persona, calling tools to fetch older data if needed.
 
-## 5. Memory Architecture (Firestore)
+## 6. Memory Architecture (Firestore)
 Strict isolation to prevent state bleed:
 * `users/{user_id}` (Profile data, persona, goals)
     * `workouts/` (Raw and compressed Strava ledger)
@@ -29,7 +43,7 @@ Strict isolation to prevent state bleed:
     * `insights/` (Cron-generated weekly summaries)
     * `milestones/` (High-signal core memories like PRs and injuries)
 
-## 6. The Agentic Harness (Tools)
+## 7. The Agentic Harness (Tools)
 The AI is restricted from hallucinating past performance. It must rely on data-fetching tools:
 * `get_last_30_days_history`: Returns a dense, token-efficient string of recent workouts.
 * `get_summary_history`: Fetches pre-computed weekly summaries for long-term narrative context.

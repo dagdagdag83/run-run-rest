@@ -26,4 +26,4 @@ RUN uv sync --frozen
 ENV PORT=8080
 
 # Execute server
-CMD ["sh", "-c", "uv run uvicorn main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips=\"*\""]
+CMD ["sh", "-c", "uv run uvicorn src.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips=\"*\""]

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse, JSONResponse
-from dependencies import oauth, db
-from logger import logger
+from src.core.dependencies import oauth, db
+from src.core.logger import logger
 
 router = APIRouter()
 
