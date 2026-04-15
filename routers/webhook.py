@@ -18,5 +18,4 @@ async def validate_webhook(request: Request):
 
 @router.post("/webhook")
 async def receive_webhook(request: Request):
-    # If someone just hits it randomly in a browser
-    return {"message": "Webhook endpoint listening."}
+    return {"status": "ok", "message": "webhook received"}
