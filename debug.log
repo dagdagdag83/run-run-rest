@@ -1,0 +1,14 @@
+{"message": "ADC found, using local Firestore DB: run-run-rest-local-db", "name": "runrun", "filename": "logger.py", "lineno": 57, "severity": "INFO"}
+{"message": "ADC found, using local Firestore DB: run-run-rest-local-db", "name": "runrun", "filename": "logger.py", "lineno": 57, "severity": "INFO"}
+{"message": "Webhook POST received. Body: {'aspect_type': 'create', 'event_time': 1776247953, 'object_id': 18123106292, 'object_type': 'activity', 'owner_id': 33199167, 'subscription_id': 340784, 'updates': {}} (Type: <class 'dict'>)", "name": "runrun", "filename": "logger.py", "lineno": 57, "severity": "INFO"}
+{"message": "Parsed activity object_id: 18123106292", "name": "runrun", "filename": "logger.py", "lineno": 57, "severity": "INFO"}
+{"message": "STRAVA_API_TOKEN is present, fetching activity: 18123106292", "name": "runrun", "filename": "logger.py", "lineno": 57, "severity": "INFO"}
+{"message": "Strava API Response Status: 401", "name": "runrun", "filename": "logger.py", "lineno": 57, "severity": "INFO"}
+{"message": "Strava HTTPStatusError for 18123106292: 401 - {\"message\":\"Authorization Error\",\"errors\":[{\"resource\":\"Athlete\",\"field\":\"access_token\",\"code\":\"invalid\"}]}", "name": "runrun", "filename": "logger.py", "lineno": 60, "severity": "ERROR"}
+{"message": "ADC found, using local Firestore DB: run-run-rest-local-db", "name": "runrun", "filename": "logger.py", "lineno": 60, "severity": "INFO"}
+{"message": "Webhook POST received. Body: {'aspect_type': 'create', 'event_time': 1776247953, 'object_id': 18123106292, 'object_type': 'activity', 'owner_id': 33199167, 'subscription_id': 340784, 'updates': {}} (Type: <class 'dict'>)", "name": "runrun", "filename": "logger.py", "lineno": 60, "severity": "INFO"}
+{"message": "Parsed activity object_id: 18123106292", "name": "runrun", "filename": "logger.py", "lineno": 60, "severity": "INFO"}
+{"message": "STRAVA_API_TOKEN is present, fetching activity: 18123106292", "name": "runrun", "filename": "logger.py", "lineno": 60, "severity": "INFO"}
+{"message": "Strava API Response Status: 401", "name": "runrun", "filename": "logger.py", "lineno": 60, "severity": "INFO"}
+{"message": "Strava HTTPStatusError for 18123106292: 401 - {\"message\":\"Authorization Error\",\"errors\":[{\"resource\":\"Athlete\",\"field\":\"access_token\",\"code\":\"invalid\"}]}", "name": "runrun", "filename": "logger.py", "lineno": 63, "severity": "ERROR"}
+{"message": "ADC found, using local Firestore DB: run-run-rest-local-db", "name": "runrun", "filename": "logger.py", "lineno": 60, "severity": "INFO"}

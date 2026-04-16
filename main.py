@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
@@ -31,4 +31,5 @@ async def get_root():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    port = 8000 if os.environ.get("ENVIRONMENT") == "production" else 80
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)

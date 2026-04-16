@@ -4,6 +4,7 @@ from fastapi import APIRouter, Request
 from pydantic import BaseModel
 from logger import logger
 from dependencies import db
+from src.features.strava.auth import get_valid_strava_token
 
 router = APIRouter()
 
@@ -25,29 +26,45 @@ async def receive_webhook(request: Request):
         body = await request.json()
     except Exception:
         body = await request.body()
-    logger.info(f"Webhook POST received. Body: {body}")
+    logger.info(f"Webhook POST received. Body: {body} (Type: {type(body)})")
     
     if isinstance(body, dict) and body.get("object_type") == "activity":
         object_id = body.get("object_id")
+        logger.info(f"Parsed activity object_id: {object_id}")
         if object_id:
-            logger.info(f"Processing activity: {object_id}")
-            token = os.environ.get("STRAVA_API_TOKEN")
+            user_id = "368456321882196914"
+            token = await get_valid_strava_token(user_id)
             if token:
+                logger.info(f"Valid Strava token retrieved for user {user_id}, fetching activity: {object_id}")
                 url = f"https://www.strava.com/api/v3/activities/{object_id}"
                 headers = {"Authorization": f"Bearer {token}"}
                 
                 async with httpx.AsyncClient() as client:
                     try:
                         resp = await client.get(url, headers=headers)
+                        logger.info(f"Strava API Response Status: {resp.status_code}")
                         resp.raise_for_status()
                         activity_data = resp.json()
-                        user_id = "368456321882196914"
                         collection_path = f"users/{user_id}/raw_strava_activities"
+                        logger.info(f"Attempting to db.put to collection {collection_path} with id {object_id}")
                         await db.put(collection=collection_path, doc_id=str(object_id), data=activity_data)
-                        logger.info(f"Saved activity {object_id} to Firestore")
+                        logger.info(f"Saved activity {object_id} to Firestore (or fallback Storage)")
+                        
+                        # Verify the db put worked
+                        check = await db.get(collection=collection_path, doc_id=str(object_id))
+                        if check:
+                            logger.info(f"Verified {object_id} exists via db.get()")
+                        else:
+                            logger.error(f"Failed db.get() check for {object_id}!")
+                            
+                    except httpx.HTTPStatusError as e:
+                        logger.error(f"Strava HTTPStatusError for {object_id}: {e.response.status_code} - {e.response.text}")
                     except Exception as e:
                         logger.error(f"Error fetching/saving activity {object_id}: {e}")
             else:
-                logger.warning("STRAVA_API_TOKEN is not set")
+                logger.warning(f"Could not obtain a valid Strava token for user {user_id}")
+    else:
+        logger.info(f"Ignored webhook. Not a valid activity dict. IS_DICT: {isinstance(body, dict)}")
 
     return {"status": "ok", "message": "webhook received"}
+

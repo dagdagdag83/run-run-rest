@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Request
+import os
+import httpx
+from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import RedirectResponse, JSONResponse
 from dependencies import oauth, db
 from logger import logger
@@ -70,3 +72,41 @@ async def api_me(request: Request):
     if not user:
         return JSONResponse(status_code=401, content={"detail": "Not authenticated"})
     return {"user": user}
+
+@router.get("/strava/authorize")
+async def strava_authorize():
+    if os.environ.get("ENVIRONMENT") == "production":
+        raise HTTPException(status_code=403, detail="Local fallback endpoint not available in production")
+    
+    client_id = "225274"
+    redirect_uri = "http://localhost/exchange_token"
+    url = f"http://www.strava.com/oauth/authorize?client_id={client_id}&response_type=code&redirect_uri={redirect_uri}&approval_prompt=force&scope=read,activity:read"
+    return RedirectResponse(url=url)
+
+@router.get("/exchange_token")
+async def exchange_token(code: str):
+    if os.environ.get("ENVIRONMENT") == "production":
+        raise HTTPException(status_code=403, detail="Local fallback endpoint not available in production")
+        
+    client_id = "225274"
+    client_secret = "d92796701f97c01677178769ddf8233108aa11a7"
+    
+    async with httpx.AsyncClient() as client:
+        resp = await client.post("https://www.strava.com/oauth/token", data={
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "code": code,
+            "grant_type": "authorization_code"
+        })
+        resp.raise_for_status()
+        token_data = resp.json()
+        
+    user_id = "368456321882196914"
+    update_data = {
+        "strava_access_token": token_data.get("access_token"),
+        "strava_refresh_token": token_data.get("refresh_token"),
+        "strava_expires_at": token_data.get("expires_at")
+    }
+    
+    await db.put("users", user_id, update_data, merge=True)
+    return {"message": "Success! Strava tokens updated.", "token_data": token_data}
