@@ -2,8 +2,8 @@ import uuid
 from datetime import datetime, timezone, timedelta
 import google.api_core.exceptions
 from google.cloud import firestore
-from dependencies import db
-from logger import logger
+from src.shared.dependencies import db
+from src.shared.logger import logger
 
 record_core_memory_tool = {
     "function_declarations": [

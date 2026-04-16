@@ -7,7 +7,9 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from starlette.middleware.sessions import SessionMiddleware
 
-from routers import auth, chat, webhook
+from src.features.auth import router as auth_router
+from src.features.chat import router as chat_router
+from src.features.strava import router as strava_router
 
 app = FastAPI(title="Run-Run-Rest", description="Agentic Fitness Harness")
 app.add_middleware(
@@ -17,9 +19,9 @@ app.add_middleware(
     https_only=os.environ.get("ENVIRONMENT") == "production"
 )
 
-app.include_router(auth.router)
-app.include_router(chat.router)
-app.include_router(webhook.router)
+app.include_router(auth_router.router)
+app.include_router(chat_router.router)
+app.include_router(strava_router.router)
 
 @app.get("/health")
 async def health_check():

@@ -1,5 +1,5 @@
 import pytest
-from storage import Storage, InMemoryStorage
+from src.shared.storage import Storage, InMemoryStorage
 
 @pytest.fixture
 def storage():

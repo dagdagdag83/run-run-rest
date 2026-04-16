@@ -1,5 +1,5 @@
 import os
-from models import PersonaModel
+from src.features.chat.models import PersonaModel
 
 # Load the base system prompt once at module initialization
 current_dir = os.path.dirname(os.path.abspath(__file__))

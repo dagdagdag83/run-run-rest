@@ -30,10 +30,10 @@ async def test_chat_endpoint_no_token():
     assert response.status_code == 401
     assert response.json() == {"detail": "Not authenticated"}
 
-from dependencies import get_current_user
+from src.shared.dependencies import get_current_user
 
 @pytest.mark.asyncio
-@patch("routers.chat.ai_client", None)
+@patch("src.features.chat.router.ai_client", None)
 async def test_chat_endpoint_success():
     async def override_get_current_user():
         return {"name": "Test User", "sub": "user_123"}

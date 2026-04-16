@@ -2,8 +2,8 @@ import os
 import httpx
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import RedirectResponse, JSONResponse
-from dependencies import oauth, db
-from logger import logger
+from src.shared.dependencies import oauth, db
+from src.shared.logger import logger
 
 router = APIRouter()
 

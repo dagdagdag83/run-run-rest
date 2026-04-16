@@ -1,8 +1,8 @@
 import os
 import time
 import httpx
-from logger import logger
-from dependencies import db
+from src.shared.logger import logger
+from src.shared.dependencies import db
 
 async def get_valid_strava_token(user_id: str) -> str | None:
     """
