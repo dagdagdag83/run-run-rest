@@ -12,7 +12,7 @@ An AI-driven fitness tracker operating as an autonomous coach. It ingests exerci
 ## 3. Core Principles
 * **KISS:** Single container, single database. No complex frontend frameworks or layered architectures (though a flat `routers/` folder structure is permitted to organize endpoints).
 * **Statelessness:** Cloud Run instances hold no global state. Context is dynamically loaded per request and wiped.
-* **Observability:** You should leverage different log levels to ensure great observability. For example, you should use INFO level for general info, DEBUG level for detailed, and ERROR level for error. Better to log too much than too little.
+* **Observability:** You should leverage different log levels to ensure great observability. For example, you should use INFO level for general info, DEBUG level for detailed, and ERROR level for error. Better to log too much than too little, but DO NOT log secrets, tokens, PII, and other sensitive information.
 * **Scale-to-Zero:** Compute runs only during active chats, UI loads, or incoming webhooks.
 * **Interface/Implementor:** Abstract external services (Firestore, Zitadel, Strava, Gemini) behind interfaces.
 * **Local Mocking:** Use in-memory mocks for external services during local development for instant, offline testing.

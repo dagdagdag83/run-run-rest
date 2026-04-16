@@ -55,7 +55,7 @@ async def get_valid_strava_token(user_id: str) -> str | None:
             new_expires_at = token_data.get("expires_at")
 
             if not new_access_token or not new_expires_at:
-                logger.error(f"Invalid response from Strava token refresh: {token_data}")
+                logger.error("Invalid response from Strava token refresh: Missing expected token keys")
                 return None
 
             update_data = {

@@ -6,6 +6,7 @@ You are a pragmatic AI software engineer building the `runrun.rest` fitness harn
 * **Simplicity:** Apply the KISS principle. Do not introduce unnecessary abstractions, layered architectures, or third-party dependencies unless explicitly requested. Keep the file structure straightforward.
 
 ## 2. Development Methodology
+* **Planning:** Strongly prefer showing plan to user before execution. Only go directly to execution for small tasks and follow up tasks.
 * **XP & Short-Lived Branches:** Follow Extreme Programming (XP) principles. DO commit directly to `main`.
 * **Strict Scoping:** Every piece of work must be highly scoped. Do not introduce scope creep or attempt to build features ahead of the current prompt. Finish the explicitly scoped work and stop.
 * **Test-Driven Development (TDD):** Always write the failing test first (Red), write minimal code to pass it (Green), and then clean up (Refactor). Use `pytest`.

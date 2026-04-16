@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from logger import logger
 from dependencies import db
 from src.features.strava.auth import get_valid_strava_token
+from src.features.strava.parser import transform_strava_activity
 
 router = APIRouter()
 
@@ -53,9 +54,15 @@ async def receive_webhook(request: Request):
                         # Verify the db put worked
                         check = await db.get(collection=collection_path, doc_id=str(object_id))
                         if check:
-                            logger.info(f"Verified {object_id} exists via db.get()")
+                            logger.info(f"Verified raw {object_id} exists via db.get()")
                         else:
-                            logger.error(f"Failed db.get() check for {object_id}!")
+                            logger.error(f"Failed db.get() check for raw {object_id}!")
+                            
+                        # Now parse and store the LLM-friendly version
+                        transformed_data = transform_strava_activity(activity_data)
+                        parsed_collection_path = f"users/{user_id}/workouts"
+                        await db.put(collection=parsed_collection_path, doc_id=str(object_id), data=transformed_data)
+                        logger.info(f"Saved parsed activity {object_id} to {parsed_collection_path}")
                             
                     except httpx.HTTPStatusError as e:
                         logger.error(f"Strava HTTPStatusError for {object_id}: {e.response.status_code} - {e.response.text}")
