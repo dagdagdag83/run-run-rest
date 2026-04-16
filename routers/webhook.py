@@ -69,6 +69,7 @@ async def receive_webhook(request: Request):
                         # Now parse and store the LLM-friendly version
                         from src.features.strava.weather import enrich_with_weather
                         from src.features.physiology.enrichment import enrich_with_physiology
+                        from src.features.scout.assessment import enrich_with_scout_assessment
                         weather_data = await enrich_with_weather(activity_data)
                         
                         transformed_data = transform_strava_activity(activity_data)
@@ -80,9 +81,23 @@ async def receive_webhook(request: Request):
                         if physiology_data:
                             transformed_data["metrics"] = physiology_data
                             
+                        # Add LLM scout auto-assessment
+                        scout_summary = await enrich_with_scout_assessment(transformed_data)
+                        if scout_summary:
+                            transformed_data["auto_assessment"] = scout_summary
+                            
                         parsed_collection_path = f"users/{user_id}/workouts"
                         await db.put(collection=parsed_collection_path, doc_id=str(object_id), data=transformed_data)
-                        logger.info(f"Saved parsed activity {object_id} to {parsed_collection_path} with weather and physiology enrichment")
+                        logger.info(
+                            "Saved parsed activity to Firestore", 
+                            extra={
+                                "object_id": object_id,
+                                "has_weather": bool(weather_data),
+                                "has_physiology": bool(physiology_data),
+                                "has_auto_assessment": bool(scout_summary),
+                                "collection_path": parsed_collection_path
+                            }
+                        )
                             
                     except httpx.HTTPStatusError as e:
                         logger.error(f"Strava HTTPStatusError for {object_id}: {e.response.status_code} - {e.response.text}")
