@@ -31,6 +31,14 @@ async def health_check():
 async def get_root():
     return FileResponse("static/index.html")
 
+@app.get("/run-run-rest-logo.png", response_class=FileResponse)
+async def get_logo():
+    return FileResponse("static/run-run-rest-logo.png")
+
+@app.get("/run-run-rest-logo-small.png", response_class=FileResponse)
+async def get_logo_small():
+    return FileResponse("static/run-run-rest-logo-small.png")
+
 if __name__ == "__main__":
     import uvicorn
     port = 8000 if os.environ.get("ENVIRONMENT") == "production" else 80

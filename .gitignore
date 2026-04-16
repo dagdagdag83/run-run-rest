@@ -73,3 +73,7 @@ venv.bak/
 # Project specific
 *.db
 *.sqlite3
+
+# Frontend
+frontend/node_modules/
+frontend/dist/

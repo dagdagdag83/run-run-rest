@@ -33,15 +33,19 @@ The agent can query your runs down to the kilometer-by-kilometer level—extract
 
 ## 🛠️ The Tech Details
 
-We designed the architecture to adhere to **KISS** (Keep It Simple, Stupid) and Extreme Programming (XP) principles. No complex frontend JS frameworks, just pure `FastAPI` power serving structured HTML alongside agentic AI workflows.
+We designed the architecture to adhere to **KISS** (Keep It Simple, Stupid) and Extreme Programming (XP) principles. We use a dedicated Vue 3 / Vite frontend alongside `FastAPI` power serving our agentic AI workflows.
+
+> **Built with AI:** This entire project was created with **Google Gemini** and **Antigravity**! 🚀
 
 ### 🚀 Core Architecture & Stack
-* **Agentic Engine**: Google GenAI SDK (Gemini 3.1 Pro for the Coach; Flash-Lite for the Scout) running on Vertex AI.
+* **Vertical Slice Architecture**: Code is naturally organized by feature (e.g., `src/features/strava/weather`) rather than technical concern. This isolated, feature-first structure is ideally suited for agentic AI coding.
+* **Agentic Engine**: Google GenAI SDK (Gemini 3.1 Flash for the Coach; Flash-Lite for the Scout) running on Vertex AI.
 * **Server**: [FastAPI](https://fastapi.tiangolo.com/) for core REST routing mechanics and static UI serving.
 * **Package Management**: [uv](https://github.com/astral-sh/uv) - blazing fast, strict dependency handling for Python 3.14.
 * **Auth**: Secure OIDC session management using [Authlib](https://docs.authlib.org/) & Zitadel.
 * **Storage**: Google Cloud Firestore (NoSQL) for scale-to-zero, stateless memory isolation.
 * **Data Validation**: Pydantic.
+* **Frontend**: Vue 3 (Composition API), Vite, Tailwind CSS, running inside the `frontend/` directory.
 
 ### 💻 Local Environment Setup
 
@@ -59,17 +63,30 @@ Your local environment gracefully detects Google Cloud credentials or falls back
    ```powershell
    gcloud auth application-default login
    ```
-5. **Run the server:**
+6. **Build the frontend:**
+   ```powershell
+   cd frontend
+   npm ci
+   npm run build
+   cd ..
+   ```
+   *This automatically generates the single `index.html` file into the `static/` directory.*
+7. **Run the server:**
    ```powershell
    uv run main.py
    ```
-   Application spins up on `http://localhost:8000`! 🚀
+   Application spins up on `http://localhost`! 🚀
 
 ### 🧪 Automated Testing
 
-We enforce Test-Driven Development (TDD) via `pytest`. The storage infrastructure and LLM dependencies are entirely mocked using custom async interface mocking, meaning our vast test suite requires zero external API calls or latency delays. 
+We enforce Test-Driven Development (TDD) via `pytest` for the backend and `vitest` for the frontend.
 ```powershell
+# Backend tests
 uv run pytest
+
+# Frontend unit tests
+cd frontend
+npm run test:unit
 ```
 
 ### ☁️ Infrastructure & CI/CD
