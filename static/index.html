@@ -70,6 +70,15 @@
         const submitBtn = document.getElementById('submit-btn');
         const chatLog = document.getElementById('chat-log');
     
+        function scrollToBottom() {
+            setTimeout(() => {
+                const lastChild = chatLog.lastElementChild;
+                if (lastChild) {
+                    lastChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                }
+            }, 50);
+        }
+    
         async function checkAuth() {
             try {
                 const response = await fetch('/api/me');
@@ -150,7 +159,7 @@
                 wrapper.appendChild(bubble);
                 chatLog.appendChild(wrapper);
             });
-            chatLog.scrollTop = chatLog.scrollHeight;
+            scrollToBottom();
         }
 
         async function sendMessage() {
@@ -182,7 +191,7 @@
                 </div>
             `;
             chatLog.appendChild(waitWrapper);
-            chatLog.scrollTop = chatLog.scrollHeight;
+            scrollToBottom();
             
             try {
                 // Fetch uses the session cookie automatically under same-origin

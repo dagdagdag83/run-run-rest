@@ -60,5 +60,7 @@ jobs:
             ZITADEL_CLIENT_SECRET=${{ secrets.ZITADEL_CLIENT_SECRET }}
             SESSION_SECRET_KEY=${{ secrets.SESSION_SECRET_KEY }}
             STRAVA_API_TOKEN=${{ secrets.STRAVA_API_TOKEN }}
+            STRAVA_CLIENT_ID=${{ secrets.STRAVA_CLIENT_ID }}
+            STRAVA_CLIENT_SECRET=${{ secrets.STRAVA_CLIENT_SECRET }}
             ENVIRONMENT=production
 

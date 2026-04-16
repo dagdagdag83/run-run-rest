@@ -8,7 +8,8 @@ from agent_tools import (
     AVAILABLE_TOOLS, 
     save_core_memory, save_milestone,
     get_core_memories, get_latest_core_memory,
-    get_milestones, get_latest_milestone
+    get_milestones, get_latest_milestone,
+    get_user_workouts_from_db, get_specific_workout_from_db
 )
 from datetime import datetime, timezone
 
@@ -58,7 +59,9 @@ async def chat_interaction(payload: ChatPayload, request: Request, user: dict = 
                 config=config
             )
             
-            if response.function_calls:
+            iterations = 0
+            while response.function_calls and iterations < 5:
+                iterations += 1
                 # Add model's tool calls to the history context
                 genai_contents.append(response.candidates[0].content)
                 
@@ -133,6 +136,53 @@ async def chat_interaction(payload: ChatPayload, request: Request, user: dict = 
                             types.Part.from_function_response(
                                 name="retrieve_latest_milestone",
                                 response={"milestone": milestone}
+                            )
+                        )
+                    elif call.name == "get_recent_workouts":
+                        days_back = call.args.get("days_back", 7)
+                        limit = call.args.get("limit", 10)
+                        min_dist = call.args.get("min_distance_km")
+                        max_dist = call.args.get("max_distance_km")
+                        
+                        try: days_back = int(days_back) if days_back is not None else 7
+                        except (ValueError, TypeError): days_back = 7
+                        try: limit = int(limit) if limit is not None else 10
+                        except (ValueError, TypeError): limit = 10
+                        try: min_dist = float(min_dist) if min_dist is not None else None
+                        except (ValueError, TypeError): min_dist = None
+                        try: max_dist = float(max_dist) if max_dist is not None else None
+                        except (ValueError, TypeError): max_dist = None
+
+                        workouts_str = await get_user_workouts_from_db(
+                            user_id=sub, 
+                            days_back=days_back, 
+                            limit=limit, 
+                            min_distance_km=min_dist, 
+                            max_distance_km=max_dist
+                        )
+                        logger.info("Tool executed: get_recent_workouts", extra={"user_id": sub})
+                        function_response_parts.append(
+                            types.Part.from_function_response(
+                                name="get_recent_workouts",
+                                response={"workouts_summary": workouts_str}
+                            )
+                        )
+                    elif call.name == "get_specific_workout":
+                        activity_id = call.args.get("activity_id")
+                        try:
+                            activity_id = int(activity_id) if activity_id is not None else 0
+                        except (ValueError, TypeError):
+                            activity_id = 0
+                            
+                        workout_str = await get_specific_workout_from_db(
+                            user_id=sub,
+                            activity_id=activity_id
+                        )
+                        logger.info("Tool executed: get_specific_workout", extra={"user_id": sub, "activity_id": activity_id})
+                        function_response_parts.append(
+                            types.Part.from_function_response(
+                                name="get_specific_workout",
+                                response={"workout_details": workout_str}
                             )
                         )
                 
