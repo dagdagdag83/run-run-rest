@@ -59,7 +59,11 @@ async def test_chat_endpoint_success():
         app.dependency_overrides.clear()
 
 @pytest.mark.asyncio
-async def test_chat_anchor_prompt_injection():
+@patch("src.features.chat.router.db")
+async def test_chat_anchor_prompt_injection(mock_db):
+    mock_db.get = AsyncMock(return_value=None)
+    mock_db.put = AsyncMock()
+    
     # We patch ai_client in the router module with an AsyncMock so we can inspect genai_contents
     mock_ai_client = AsyncMock()
     mock_response = AsyncMock()
