@@ -34,7 +34,11 @@ from src.shared.dependencies import get_current_user
 
 @pytest.mark.asyncio
 @patch("src.features.chat.router.ai_client", None)
-async def test_chat_endpoint_success():
+@patch("src.features.chat.router.db")
+async def test_chat_endpoint_success(mock_db):
+    mock_db.get = AsyncMock(return_value=None)
+    mock_db.put = AsyncMock()
+    
     async def override_get_current_user():
         return {"name": "Test User", "sub": "user_123"}
 
