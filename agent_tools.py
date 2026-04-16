@@ -43,6 +43,52 @@ record_milestone_tool = {
     ]
 }
 
+set_training_directive_tool = {
+    "function_declarations": [
+        {
+            "name": "set_training_directive",
+            "description": "Use this tool to record a new training philosophy, habit, or rule the user wants to follow for an upcoming training block. Do NOT use this for past achievements. Call this silently when the user proposes a strategic shift in their training (e.g., 'I want to run outside more this month'). Calculate an appropriate target_date based on their timeframe.",
+            "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                    "focus": {
+                        "type": "STRING",
+                        "description": "The description of the training focus or newly defined rule."
+                    },
+                    "rationale": {
+                        "type": "STRING",
+                        "description": "The logic or reason behind this directive."
+                    },
+                    "target_date": {
+                        "type": "STRING",
+                        "description": "The calculated target date based on the timeframe, formatted YYYY-MM-DD."
+                    }
+                },
+                "required": ["focus", "rationale", "target_date"]
+            }
+        }
+    ]
+}
+
+remove_training_directive_tool = {
+    "function_declarations": [
+        {
+            "name": "remove_training_directive",
+            "description": "Use this tool to delete an active training directive. Call this if the user explicitly abandons a goal, or if you notice the target_date has passed, you have asked the user about it, and they agree it is time to clear it.",
+            "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                    "focus": {
+                        "type": "STRING",
+                        "description": "The exact focus text of the directive to remove."
+                    }
+                },
+                "required": ["focus"]
+            }
+        }
+    ]
+}
+
 retrieve_core_memories_tool = {
     "function_declarations": [
         {
@@ -169,6 +215,25 @@ update_workout_notes_tool = {
     ]
 }
 
+get_training_directives_tool = {
+    "function_declarations": [
+        {
+            "name": "get_training_directives",
+            "description": "Use this tool to fetch the user's training directives. You can request either 'all' or 'active' (which filters out directives where the target_date is in the past).",
+            "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                    "status": {
+                        "type": "STRING",
+                        "description": "The status of directives to fetch. Must be either 'all' or 'active'."
+                    }
+                },
+                "required": ["status"]
+            }
+        }
+    ]
+}
+
 AVAILABLE_TOOLS = [
     record_core_memory_tool, 
     record_milestone_tool,
@@ -178,7 +243,10 @@ AVAILABLE_TOOLS = [
     retrieve_latest_milestone_tool,
     get_recent_workouts_tool,
     get_specific_workout_tool,
-    update_workout_notes_tool
+    update_workout_notes_tool,
+    set_training_directive_tool,
+    remove_training_directive_tool,
+    get_training_directives_tool
 ]
 
 async def save_core_memory(user_id: str, text: str):
@@ -282,11 +350,15 @@ async def get_specific_workout_from_db(user_id: str, activity_id: int):
         hr = data.get("average_heartrate", "N/A")
         desc = data.get("description") or "No description"
         notes = data.get("user_notes", "No notes recorded.")
+        sport_type = data.get("sport_type", "Unknown")
+        device_name = data.get("device_name", "Unknown")
         
         result_parts = [
             f"Activity ID: {activity_id}",
             f"Name: {name}",
             f"Date: {date}",
+            f"Sport Category: {sport_type}",
+            f"Device: {device_name}",
             f"Distance: {dist}km",
             f"Pace: {pace}/km",
             f"Avg HR: {hr} BPM",
@@ -317,3 +389,60 @@ async def update_workout_notes_in_db(user_id: str, activity_id: int, notes: str)
     except Exception as e:
         logger.error(f"Unexpected error updating notes for workout {activity_id}: {e}")
 
+async def set_training_directive_in_db(user_id: str, focus: str, rationale: str, target_date: str):
+    """Appends a new training directive to the user's active_directives array using Firestore ArrayUnion."""
+    try:
+        data = {
+            "focus": focus,
+            "rationale": rationale,
+            "target_date": target_date
+        }
+        await db.put("users", user_id, {"active_directives": firestore.ArrayUnion([data])}, merge=True)
+    except Exception as e:
+        logger.error(f"Unexpected error appending training directive for user {user_id}: {e}")
+
+async def remove_training_directive_from_db(user_id: str, focus: str):
+    """Removes a training directive from the user's active_directives array by matching the focus string."""
+    try:
+        doc = await db.get("users", user_id)
+        if not doc:
+            return
+            
+        current_directives = doc.get("active_directives", [])
+        new_directives = [d for d in current_directives if d.get("focus") != focus]
+        
+        await db.put("users", user_id, {"active_directives": new_directives}, merge=True)
+    except Exception as e:
+        logger.error(f"Unexpected error removing training directive for user {user_id}: {e}")
+
+async def get_training_directives_from_db(user_id: str, status: str = "active"):
+    """Fetches training directives for the user. If status is 'active', filters out past target_dates."""
+    try:
+        doc = await db.get("users", user_id)
+        if not doc:
+            return "No training directives found."
+            
+        directives = doc.get("active_directives", [])
+        if not directives:
+            return "No training directives found."
+            
+        if status == "active":
+            today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            active_list = []
+            for d in directives:
+                target = d.get("target_date", "")
+                if target >= today_str or not target:
+                    active_list.append(d)
+            directives = active_list
+            
+        if not directives:
+            return f"No {status} training directives found."
+            
+        results = [f"--- {status.upper()} DIRECTIVES ---"]
+        for d in directives:
+            results.append(f"- Focus: {d.get('focus')}\n  Rationale: {d.get('rationale')}\n  Target Date: {d.get('target_date')}")
+            
+        return "\n".join(results)
+    except Exception as e:
+        logger.error(f"Unexpected error getting training directives for user {user_id}: {e}")
+        return f"System Error: Could not retrieve training directives. {e}"

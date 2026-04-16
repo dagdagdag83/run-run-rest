@@ -51,10 +51,15 @@ def transform_strava_activity(raw_data: Dict[str, Any]) -> Dict[str, Any]:
             "average_heartrate": split.get("average_heartrate")
         })
 
+    device_name = raw_data.get("device_name")
+    sport_type = raw_data.get("sport_type") or raw_data.get("type", "Unknown")
+
     return {
         "id": raw_data.get("id"),
         "name": raw_data.get("name"),
         "type": raw_data.get("type"),
+        "sport_type": sport_type,
+        "device_name": device_name,
         "total_elevation_gain": raw_data.get("total_elevation_gain"),
         "start_date_local": parsed_date,
         "distance_km": distance_km,

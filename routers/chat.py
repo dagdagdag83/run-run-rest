@@ -10,7 +10,9 @@ from agent_tools import (
     get_core_memories, get_latest_core_memory,
     get_milestones, get_latest_milestone,
     get_user_workouts_from_db, get_specific_workout_from_db,
-    update_workout_notes_in_db
+    update_workout_notes_in_db,
+    set_training_directive_in_db, remove_training_directive_from_db,
+    get_training_directives_from_db
 )
 from datetime import datetime, timezone
 import time
@@ -22,7 +24,14 @@ async def chat_interaction(payload: ChatPayload, request: Request, user: dict = 
     sub = user.get("sub")
     first_name = user.get("given_name") or user.get("name", "User")
     selected_persona_id = user.get("selected_persona", "supportive-realist")
-    active_goals = user.get("active_goals", [])
+    active_directives = user.get("active_directives", [])
+    
+    active_directives_str = "No active directives."
+    if active_directives:
+        directives_list = []
+        for d in active_directives:
+            directives_list.append(f"- Focus: {d.get('focus')}\n  Rationale: {d.get('rationale')}\n  Target Date: {d.get('target_date')}")
+        active_directives_str = "\n".join(directives_list)
     
     persona = get_persona(selected_persona_id)
     
@@ -47,7 +56,7 @@ async def chat_interaction(payload: ChatPayload, request: Request, user: dict = 
                     types.Content(role=role, parts=[types.Part.from_text(text=msg["content"])])
                 )
                 
-            sys_instruct = build_system_prompt(persona, first_name, current_timestamp, active_goals)
+            sys_instruct = build_system_prompt(persona, first_name, current_timestamp, active_directives_str)
             
             # Build config using tools from our agent_tools file
             config = types.GenerateContentConfig(
@@ -208,6 +217,46 @@ async def chat_interaction(payload: ChatPayload, request: Request, user: dict = 
                             types.Part.from_function_response(
                                 name="update_workout_notes",
                                 response={"status": "success"}
+                            )
+                        )
+                    elif call.name == "set_training_directive":
+                        focus = call.args.get("focus")
+                        rationale = call.args.get("rationale")
+                        target_date = call.args.get("target_date")
+                        
+                        if focus and rationale and target_date:
+                            await set_training_directive_in_db(sub, focus, rationale, target_date)
+                            logger.info("Tool executed: set_training_directive", extra={"user_id": sub, "focus": focus, "rationale": rationale, "target_date": target_date})
+                            
+                        function_response_parts.append(
+                            types.Part.from_function_response(
+                                name="set_training_directive",
+                                response={"status": "success"}
+                            )
+                        )
+                    elif call.name == "remove_training_directive":
+                        focus = call.args.get("focus")
+                        
+                        if focus:
+                            await remove_training_directive_from_db(sub, focus)
+                            logger.info("Tool executed: remove_training_directive", extra={"user_id": sub, "focus": focus})
+                            
+                        function_response_parts.append(
+                            types.Part.from_function_response(
+                                name="remove_training_directive",
+                                response={"status": "success"}
+                            )
+                        )
+                    elif call.name == "get_training_directives":
+                        status = call.args.get("status", "active")
+                        
+                        directives_str = await get_training_directives_from_db(sub, status)
+                        logger.info("Tool executed: get_training_directives", extra={"user_id": sub, "status": status})
+                        
+                        function_response_parts.append(
+                            types.Part.from_function_response(
+                                name="get_training_directives",
+                                response={"directives": directives_str}
                             )
                         )
                 

@@ -46,6 +46,14 @@ async def receive_webhook(request: Request):
                         logger.info(f"Strava API Response Status: {resp.status_code}")
                         resp.raise_for_status()
                         activity_data = resp.json()
+                        
+                        sport_type = activity_data.get("sport_type") or activity_data.get("type", "Unknown")
+                        allowed_types = ["Run", "TrailRun", "VirtualRun", "Walk", "Hike"]
+                        
+                        if sport_type not in allowed_types:
+                            logger.info(f"Skipping non-running activity {object_id} of type {sport_type}")
+                            return {"status": "ok", "message": "skipped non-running task"}
+                            
                         collection_path = f"users/{user_id}/raw_strava_activities"
                         logger.info(f"Attempting to db.put to collection {collection_path} with id {object_id}")
                         await db.put(collection=collection_path, doc_id=str(object_id), data=activity_data)
