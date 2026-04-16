@@ -59,6 +59,54 @@ async def test_chat_endpoint_success():
         app.dependency_overrides.clear()
 
 @pytest.mark.asyncio
+async def test_chat_anchor_prompt_injection():
+    # We patch ai_client in the router module with an AsyncMock so we can inspect genai_contents
+    mock_ai_client = AsyncMock()
+    mock_response = AsyncMock()
+    mock_response.function_calls = []
+    mock_response.text = "Hello from mocked AI!"
+    mock_ai_client.aio.models.generate_content.return_value = mock_response
+
+    async def override_get_current_user():
+        return {"name": "Test User", "sub": "user_123"}
+
+    app.dependency_overrides[get_current_user] = override_get_current_user
+    
+    with patch("src.features.chat.router.ai_client", mock_ai_client):
+        try:
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://test"
+            ) as ac:
+                response = await ac.post("/chat", json={"message": "how do I bake a cake?"})
+            
+            assert response.status_code == 200
+            data = response.json()
+            
+            # The returned message array should be pure (no Anchor Prompt)
+            user_msg = data["messages"][-2]
+            assert user_msg["role"] == "user"
+            assert "how do I bake a cake?" in user_msg["content"]
+            assert "SYSTEM DIRECTIVE" not in user_msg["content"], "Anchor Prompt leaked into pure messages array!"
+            
+            # The call to the mocked AI client should contain the Anchor Prompt
+            mock_ai_client.aio.models.generate_content.assert_called_once()
+            kwargs = mock_ai_client.aio.models.generate_content.call_args.kwargs
+            
+            # Contents should be an array of types.Content
+            genai_contents = kwargs.get("contents")
+            assert genai_contents is not None
+            
+            # The last Content part should have the anchor prompt text
+            last_content = genai_contents[-1]
+            assert getattr(last_content, "role", None) == "user"
+            
+            text_part = last_content.parts[0].text
+            assert "SYSTEM DIRECTIVE: You are the athlete's Fitness Coach." in text_part, "Anchor prompt not injected before LLM text!"
+            
+        finally:
+            app.dependency_overrides.clear()
+
+@pytest.mark.asyncio
 async def test_root_endpoint():
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"

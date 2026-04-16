@@ -15,6 +15,7 @@ from src.features.chat.tools import (
     get_training_directives_from_db,
     update_user_biometrics_in_db, get_user_biometrics_from_db
 )
+from src.features.chat.constants import ANCHOR_PROMPT
 from datetime import datetime, timezone
 import time
 
@@ -51,10 +52,16 @@ async def chat_interaction(payload: ChatPayload, request: Request, user: dict = 
     if ai_client:
         try:
             genai_contents = []
-            for msg in messages:
+            for i, msg in enumerate(messages):
                 role = "model" if msg["role"] == "assistant" else msg["role"]
+                
+                text_content = msg["content"]
+                # Intercept the payload: append ANCHOR_PROMPT to the final user message
+                if i == len(messages) - 1 and role == "user":
+                    text_content += ANCHOR_PROMPT
+                    
                 genai_contents.append(
-                    types.Content(role=role, parts=[types.Part.from_text(text=msg["content"])])
+                    types.Content(role=role, parts=[types.Part.from_text(text=text_content)])
                 )
                 
             biometrics = user.get("biometrics")
