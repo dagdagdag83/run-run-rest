@@ -9,9 +9,11 @@ from agent_tools import (
     save_core_memory, save_milestone,
     get_core_memories, get_latest_core_memory,
     get_milestones, get_latest_milestone,
-    get_user_workouts_from_db, get_specific_workout_from_db
+    get_user_workouts_from_db, get_specific_workout_from_db,
+    update_workout_notes_in_db
 )
 from datetime import datetime, timezone
+import time
 
 router = APIRouter()
 
@@ -53,11 +55,15 @@ async def chat_interaction(payload: ChatPayload, request: Request, user: dict = 
                 tools=AVAILABLE_TOOLS,
             )
             
+            logger.info("Sending initial request to Gemini model", extra={"user_id": sub})
+            start_time = time.time()
             response = await ai_client.aio.models.generate_content(
                 model='gemini-3.1-flash-lite-preview',
                 contents=genai_contents,
                 config=config
             )
+            duration = time.time() - start_time
+            logger.info(f"Gemini API call completed", extra={"user_id": sub, "duration_s": round(duration, 2), "iteration": 0})
             
             iterations = 0
             while response.function_calls and iterations < 5:
@@ -99,7 +105,7 @@ async def chat_interaction(payload: ChatPayload, request: Request, user: dict = 
                         except ValueError:
                             max_results = None
                         memories = await get_core_memories(sub, max_results)
-                        logger.info("Tool executed: retrieve_core_memories", extra={"user_id": sub})
+                        logger.info("Tool executed: retrieve_core_memories", extra={"user_id": sub, "max_results": max_results})
                         function_response_parts.append(
                             types.Part.from_function_response(
                                 name="retrieve_core_memories",
@@ -122,7 +128,7 @@ async def chat_interaction(payload: ChatPayload, request: Request, user: dict = 
                         except ValueError:
                             max_results = None
                         milestones = await get_milestones(sub, max_results)
-                        logger.info("Tool executed: retrieve_milestones", extra={"user_id": sub})
+                        logger.info("Tool executed: retrieve_milestones", extra={"user_id": sub, "max_results": max_results})
                         function_response_parts.append(
                             types.Part.from_function_response(
                                 name="retrieve_milestones",
@@ -160,7 +166,7 @@ async def chat_interaction(payload: ChatPayload, request: Request, user: dict = 
                             min_distance_km=min_dist, 
                             max_distance_km=max_dist
                         )
-                        logger.info("Tool executed: get_recent_workouts", extra={"user_id": sub})
+                        logger.info("Tool executed: get_recent_workouts", extra={"user_id": sub, "days_back": days_back, "limit": limit, "min_distance_km": min_dist, "max_distance_km": max_dist})
                         function_response_parts.append(
                             types.Part.from_function_response(
                                 name="get_recent_workouts",
@@ -185,15 +191,38 @@ async def chat_interaction(payload: ChatPayload, request: Request, user: dict = 
                                 response={"workout_details": workout_str}
                             )
                         )
+                    elif call.name == "update_workout_notes":
+                        activity_id = call.args.get("activity_id")
+                        notes = call.args.get("notes")
+                        
+                        try:
+                            activity_id = int(activity_id) if activity_id is not None else 0
+                        except (ValueError, TypeError):
+                            activity_id = 0
+                            
+                        if activity_id and notes:
+                            await update_workout_notes_in_db(sub, activity_id, notes)
+                            logger.info("Tool executed: update_workout_notes", extra={"user_id": sub, "activity_id": activity_id, "notes": notes})
+                            
+                        function_response_parts.append(
+                            types.Part.from_function_response(
+                                name="update_workout_notes",
+                                response={"status": "success"}
+                            )
+                        )
                 
                 genai_contents.append(types.Content(role="function", parts=function_response_parts))
                 
                 # Resubmit with function results to get final conversational response
+                logger.info(f"Resubmitting to Gemini model with tool responses", extra={"user_id": sub, "iteration": iterations})
+                start_time = time.time()
                 response = await ai_client.aio.models.generate_content(
                     model='gemini-3.1-flash-lite-preview',
                     contents=genai_contents,
                     config=config
                 )
+                duration = time.time() - start_time
+                logger.info(f"Gemini API tool resubmission completed", extra={"user_id": sub, "duration_s": round(duration, 2), "iteration": iterations})
                 
             bot_text = response.text or "I'm sorry, I couldn't generate a response."
             messages.append({"role": "assistant", "content": bot_text})

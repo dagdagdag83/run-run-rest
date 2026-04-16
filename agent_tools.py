@@ -146,6 +146,29 @@ get_specific_workout_tool = {
     ]
 }
 
+update_workout_notes_tool = {
+    "function_declarations": [
+        {
+            "name": "update_workout_notes",
+            "description": "Use this tool to record the user's subjective thoughts, feelings of fatigue, weather conditions, or pain related to a SPECIFIC run. CRITICAL: This tool OVERWRITES the existing notes. If the workout already has notes (which you can see from your read tools), you must act as an editor: compose a new, consolidated note that preserves the important historical context while integrating the new feedback, and pass that fully synthesized string into the 'notes' argument.",
+            "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                    "activity_id": {
+                        "type": "INTEGER",
+                        "description": "The Strava activity_id of the workout."
+                    },
+                    "notes": {
+                        "type": "STRING",
+                        "description": "The full consolidated, subjective note for the workout."
+                    }
+                },
+                "required": ["activity_id", "notes"]
+            }
+        }
+    ]
+}
+
 AVAILABLE_TOOLS = [
     record_core_memory_tool, 
     record_milestone_tool,
@@ -154,7 +177,8 @@ AVAILABLE_TOOLS = [
     retrieve_milestones_tool,
     retrieve_latest_milestone_tool,
     get_recent_workouts_tool,
-    get_specific_workout_tool
+    get_specific_workout_tool,
+    update_workout_notes_tool
 ]
 
 async def save_core_memory(user_id: str, text: str):
@@ -224,7 +248,9 @@ async def get_user_workouts_from_db(user_id: str, days_back: int = 7, limit: int
             dist = data.get("distance_km", 0)
             pace = data.get("average_pace_min_km", "N/A")
             hr = data.get("average_heartrate", "N/A")
-            results.append(f"ID: {doc.id} | Date: {date} | Name: {name} | Dist: {dist}km | Pace: {pace}/km | Avg HR: {hr}")
+            notes = data.get("user_notes", "")
+            notes_str = f" | Notes: {notes}" if notes else ""
+            results.append(f"ID: {doc.id} | Date: {date} | Name: {name} | Dist: {dist}km | Pace: {pace}/km | Avg HR: {hr}{notes_str}")
             
         return "\n".join(results)
         
@@ -255,6 +281,7 @@ async def get_specific_workout_from_db(user_id: str, activity_id: int):
         pace = data.get("average_pace_min_km", "N/A")
         hr = data.get("average_heartrate", "N/A")
         desc = data.get("description") or "No description"
+        notes = data.get("user_notes", "No notes recorded.")
         
         result_parts = [
             f"Activity ID: {activity_id}",
@@ -264,6 +291,7 @@ async def get_specific_workout_from_db(user_id: str, activity_id: int):
             f"Pace: {pace}/km",
             f"Avg HR: {hr} BPM",
             f"Description: {desc}",
+            f"User Subjective Notes: {notes}",
             "--- Splits ---"
         ]
         
@@ -281,3 +309,11 @@ async def get_specific_workout_from_db(user_id: str, activity_id: int):
     except Exception as e:
         logger.error(f"Unexpected error in get_specific_workout_from_db: {e}")
         return f"System Error: Could not retrieve workout. {e}"
+
+async def update_workout_notes_in_db(user_id: str, activity_id: int, notes: str):
+    """Updates the user_notes field for a specific workout document."""
+    try:
+        await db.put(f"users/{user_id}/workouts", str(activity_id), {"user_notes": notes}, merge=True)
+    except Exception as e:
+        logger.error(f"Unexpected error updating notes for workout {activity_id}: {e}")
+
