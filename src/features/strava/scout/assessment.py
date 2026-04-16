@@ -1,6 +1,6 @@
 import json
 from google.genai import Client
-from logger import logger
+from src.shared.logger import logger
 
 SCOUT_PROMPT = """
 You are a clinical sports data scientist analyzing a runner's workout JSON. Your job is anomaly detection and physiological insight. 

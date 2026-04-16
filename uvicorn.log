@@ -1,0 +1,18 @@
+{"message": "Failed to initialize Vertex AI client: Your default credentials were not found. To set up Application Default Credentials, see https://cloud.google.com/docs/authentication/external/set-up-adc for more information.", "name": "runrun", "filename": "logger.py", "lineno": 62, "severity": "WARNING"}
+{"message": "ADC not found, falling back to InMemoryStorage", "name": "runrun", "filename": "logger.py", "lineno": 53, "severity": "INFO"}
+INFO:     Started server process [824510]
+INFO:     Waiting for application startup.
+Task exception was never retrieved
+future: <Task finished name='Task-2' coro=<BaseApiClient.aclose() done, defined at /app/.venv/lib/python3.14/site-packages/google/genai/_api_client.py:2100> exception=AttributeError("'BaseApiClient' object has no attribute '_async_httpx_client'")>
+Traceback (most recent call last):
+  File "/app/.venv/lib/python3.14/site-packages/google/genai/_api_client.py", line 2105, in aclose
+    await self._async_httpx_client.aclose()  # type: ignore[union-attr]
+          ^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'BaseApiClient' object has no attribute '_async_httpx_client'
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:41792 - "GET /health HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [824510]

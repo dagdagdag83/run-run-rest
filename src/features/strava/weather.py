@@ -1,6 +1,6 @@
 import httpx
 from datetime import datetime
-from logger import logger
+from src.shared.logger import logger
 
 def get_condition_from_wmo(code: int) -> str:
     """Maps WMO weather codes to human readable strings."""

@@ -10,7 +10,8 @@ An AI-driven fitness tracker operating as an autonomous coach. It ingests exerci
 * **DevOps:** Standard `Dockerfile`, `python-json-logger` (GCP-compatible stdout logging).
 
 ## 3. Core Principles
-* **KISS:** Single container, single database. No complex frontend frameworks or layered architectures (though a flat `routers/` folder structure is permitted to organize endpoints).
+* **Vertical Slice Architecture:** Code is organized by feature rather than technical concern. Business logic, routing, and models for a given feature live together under `src/features/`. Cross-cutting shared utilities live under `src/shared/`.
+* **KISS:** Single container, single database. No complex frontend frameworks.
 * **Statelessness:** Cloud Run instances hold no global state. Context is dynamically loaded per request and wiped.
 * **Observability:** You should leverage different log levels to ensure great observability. For example, you should use INFO level for general info, DEBUG level for detailed, and ERROR level for error. Better to log too much than too little, but DO NOT log secrets, tokens, PII, and other sensitive information.
 * **Scale-to-Zero:** Compute runs only during active chats, UI loads, or incoming webhooks.

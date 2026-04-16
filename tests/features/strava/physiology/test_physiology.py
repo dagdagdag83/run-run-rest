@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, patch
 
-from src.features.physiology.enrichment import enrich_with_physiology
+from src.features.strava.physiology.enrichment import enrich_with_physiology
 
 # Mock parsed data
 MOCK_PARSED_DATA = {
@@ -81,7 +81,7 @@ MOCK_BIOMETRICS_TIER_3 = {
 # primary zone: avg hr 145 -> Z3.
 
 @pytest.mark.asyncio
-@patch("src.features.physiology.enrichment.db.get", new_callable=AsyncMock)
+@patch("src.features.strava.physiology.enrichment.db.get", new_callable=AsyncMock)
 async def test_enrich_with_physiology_tier_1(mock_db_get):
     mock_db_get.return_value = {"biometrics": MOCK_BIOMETRICS_TIER_1}
     
@@ -93,7 +93,7 @@ async def test_enrich_with_physiology_tier_1(mock_db_get):
     assert result["intensity_score"] == 4.6
 
 @pytest.mark.asyncio
-@patch("src.features.physiology.enrichment.db.get", new_callable=AsyncMock)
+@patch("src.features.strava.physiology.enrichment.db.get", new_callable=AsyncMock)
 async def test_enrich_with_physiology_tier_2(mock_db_get):
     mock_db_get.return_value = {"biometrics": MOCK_BIOMETRICS_TIER_2}
     
@@ -105,7 +105,7 @@ async def test_enrich_with_physiology_tier_2(mock_db_get):
     assert result["intensity_score"] == 5.1
 
 @pytest.mark.asyncio
-@patch("src.features.physiology.enrichment.db.get", new_callable=AsyncMock)
+@patch("src.features.strava.physiology.enrichment.db.get", new_callable=AsyncMock)
 async def test_enrich_with_physiology_tier_3_tanaka(mock_db_get):
     mock_db_get.return_value = {"biometrics": MOCK_BIOMETRICS_TIER_3}
     
@@ -117,7 +117,7 @@ async def test_enrich_with_physiology_tier_3_tanaka(mock_db_get):
     assert result["intensity_score"] == 7.3
 
 @pytest.mark.asyncio
-@patch("src.features.physiology.enrichment.db.get", new_callable=AsyncMock)
+@patch("src.features.strava.physiology.enrichment.db.get", new_callable=AsyncMock)
 async def test_enrich_with_physiology_tier_3_max_hr(mock_db_get):
     mock_db_get.return_value = {"biometrics": {"max_hr": 200}}
     # Z1 (< 136) -> 130: Z1

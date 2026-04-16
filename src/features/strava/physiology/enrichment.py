@@ -1,5 +1,5 @@
-from dependencies import db
-from logger import logger
+from src.shared.dependencies import db
+from src.shared.logger import logger
 
 def _get_zone(hr: float, boundaries: list[float]) -> str:
     """
