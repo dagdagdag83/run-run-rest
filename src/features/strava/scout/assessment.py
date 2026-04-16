@@ -11,7 +11,7 @@ Do not summarize basic stats (total distance/time). Instead, identify the most s
 * Intensity mismatches (e.g., HR zone is much higher than expected for the pace).
 * Environmental impact (e.g., how high winds or freezing temps likely affected the effort).
 
-IMPORTANT: Consider that athlethe might do HIIT programs or interval training, so the HR and effort can fluctuate during the workout. 
+IMPORTANT: Consider that runners might do HIIT programs or interval training, so the HR and effort can fluctuate during the workout. 
 
 Output 2 to 4 concise, purely analytical sentences focusing ONLY on the highest-signal observations. If the run was perfectly steady and unremarkable, state that the metrics were stable. No markdown, no greetings, no fluff.
 """
