@@ -1,107 +1,86 @@
-# 🏃‍♂️🤖 run-run-rest 
+<div align="center">
+  <h1>🏃‍♂️🤖 run-run-rest</h1>
+  <p><strong>The Highly Opinionated, Agentic AI Running Coach </strong></p>
+</div>
 
-**run-run-rest** is a highly opinionated, AI-driven fitness tracker that operates as your autonomous personal coach! Designed as an agentic harness, it ingests your continuous exercise data (like from Strava), maintains deep, long-term contextual memory of your highs and lows, and chats with you through distinct personas. It's the fitness tracker that never forgets a PR, and never lets you skip leg day. 🏋️‍♂️✨
+**run-run-rest** is a serverless, agentic fitness harness that operates as your autonomous personal coach. Designed to seamlessly ingest your continuous exercise data (like from Strava), it maintains deep, long-term contextual memory of your highs, lows, PRs, and injuries. 
 
-## 🚀 Core Dependencies
+It talks to you through distinct personas, analyzes your kilometer splits, complains about your skyrocketing heart rate, and makes sure you never skip leg day. 🏋️‍♂️✨
 
-* **[FastAPI](https://fastapi.tiangolo.com/)**: Core REST routing mechanics & static UI serving.
-* **[Authlib](https://docs.authlib.org/)**: Heavy-lifting for OpenID Connect via Zitadel.
-* **Google Cloud Firestore**: Abstracted memory persistence.
-* **[uv](https://github.com/astral-sh/uv)**: Blazing fast Python packaging and execution.
-* **Pydantic**: Robust data validation and typing.
+---
 
-## 🛠️ Local Environment Setup
+## ✨ Project Highlights & Capabilities
 
-We keep things extremely simple. Your local runs will dynamically detect your Google Cloud credentials. If Application Default Credentials (ADC) are found, the harness connects to a dedicated local Firestore database (`run-run-rest-local-db`). If no credentials are found (or if they fail), it gracefully falls back to an in-memory storage mock out-of-the-box so you can work locally and offline without racking up GCP bills!
+### 🧠 Agentic Memory & Contextual Coaching
+It’s not just a wrapper over a chat API. **run-run-rest** utilizes an agentic orchestration loop equipped with dynamic function-calling tools. It accesses your core memories, athlete biometrics, and milestones. It knows if you are nursing an Achilles injury, when your last 5K PR was, and dynamically adjusts its coaching context based on your temporal history.
+
+### 📡 Automated Strava Ingestion
+Zero manual data entry. Through a highly integrated webhook pipeline, your raw Strava activity payloads are seamlessly ingested into the platform the moment you finish your run.
+
+### ⛈️ Environmental & Physiological Enrichment 
+Once ingested, a run isn't just distance and time. The pipeline cross-references your GPS coordinates and timestamps against the **Open-Meteo API** to pull historical weather conditions (Was it a grueling headwind? Freezing rain?). It then enriches your data with our tiered physiological algorithms, calculating holistic intensity scores and intelligent dynamic heart rate zones (falling back through LTHR > Karvonen > Standard Max HR).
+
+### 🩺 "Scout" Tactical Assessments
+Before the primary coaching agent even looks at your run, an ultra-fast LLM sub-agent (the "Scout") automatically analyzes your specific pacing strategy and cardiac drift in the background. It attaches a pristine clinical metadata summary to your workout record so your coach has an instant, unbiased tactical overview.
+
+### 🗣️ Proactive Directives & Personas
+Want a drill instructor? Or a supportive yogi? The AI adapts via distinct personas. You can issue "Active Training Directives" (e.g., "Enforce an 80/20 Zone 2 philosophy this block," or "Focus on half-marathon pacing"), and the AI will proactively check your incoming specific split data against these directives to keep you honest.
+
+### 📊 Granular Split Analysis & Qualitative Notes
+The agent can query your runs down to the kilometer-by-kilometer level—extracting pace, elevation, and heart rate for deep analytical coaching. You can also provide subjective feedback directly to your database ("Felt sluggish today") using the integrated Workout Notes tools, guaranteeing both qualitative and quantitative context tracking.
+
+---
+
+## 🛠️ The Tech Details
+
+We designed the architecture to adhere to **KISS** (Keep It Simple, Stupid) and Extreme Programming (XP) principles. No complex frontend JS frameworks, just pure `FastAPI` power serving structured HTML alongside agentic AI workflows.
+
+### 🚀 Core Architecture & Stack
+* **Agentic Engine**: Google GenAI SDK (Gemini 3.1 Pro for the Coach; Flash-Lite for the Scout) running on Vertex AI.
+* **Server**: [FastAPI](https://fastapi.tiangolo.com/) for core REST routing mechanics and static UI serving.
+* **Package Management**: [uv](https://github.com/astral-sh/uv) - blazing fast, strict dependency handling for Python 3.14.
+* **Auth**: Secure OIDC session management using [Authlib](https://docs.authlib.org/) & Zitadel.
+* **Storage**: Google Cloud Firestore (NoSQL) for scale-to-zero, stateless memory isolation.
+* **Data Validation**: Pydantic.
+
+### 💻 Local Environment Setup
+
+Your local environment gracefully detects Google Cloud credentials or falls back to an in-memory storage mock to save on GCP bills and allow offline development!
 
 1. **Get your Python right:** Ensure you have Python 3.14+ installed.
-2. **Install `uv`:** The modern, lightning-fast standard for Python environments. (e.g. `curl -LsSf https://astral.sh/uv/install.sh | sh`)
-3. **Set up your Environment Variables:** 
-   Copy the example config into a `.env` file to be picked up by the harness.
+2. **Install `uv`:** The modern standard for Python environments. (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
+3. **Set up Environment Variables:** 
    ```powershell
    Copy-Item .env.example .env
    ```
-   *Make sure you fill in valid Zitadel API details and a random `SESSION_SECRET_KEY` within the `.env` if you are testing the login UI!*
-
-4. **Configure Google Cloud Credentials:**
-   To ensure the Gemini AI integration works locally and to persist testing data to the distinct `run-run-rest-local-db` Firestore instance, you need to acquire Application Default Credentials (ADC).
+   *Fill in valid Zitadel API details and a random `SESSION_SECRET_KEY` for the UI login.*
+4. **Configure Google Cloud Credentials (Optional but recommended):**
+   To test Firestore locally or the Gemini AI integrations, acquire Application Default Credentials. This connects you to a local isolated database (`run-run-rest-local-db`).
    ```powershell
    gcloud auth application-default login
    ```
-
 5. **Run the server:**
-   Use the built-in `uv` command to run the application entrypoint. This automatically resolves your `pyproject.toml` dependencies and sets up an isolated `.venv`.
    ```powershell
    uv run main.py
    ```
-   You should see the application spin up on `http://localhost:8000`! 🚀
+   Application spins up on `http://localhost:8000`! 🚀
 
-## 🧪 Testing the Chat Endpoint (PowerShell)
+### 🧪 Automated Testing
 
-We use secure, strict session-cookie based Auth. Here's how you can manually test the `/chat` endpoint locally using **PowerShell**:
-
-### Without Valid Auth (Expected to Fail) 🛑
-Attempting to hit the chat endpoint unauthenticated will correctly throw a `401 Unauthorized` HTTP exception.
-```powershell
-# This command expects an HTTP 401 response from FastAPI.
-try {
-    Invoke-RestMethod -Uri "http://localhost:8000/chat" -Method Post -ErrorAction Stop
-} catch {
-    Write-Host "Caught expected error: $($_.Exception.Message)" -ForegroundColor Yellow
-}
-```
-
-### With Valid Auth (Expected to Pass) ✅
-Because we are utilizing UI-bound session cookies, you need to manually hijack a valid session for CLI testing. We've created a helper endpoint to make this easy:
-1. Fire up your browser and navigate to `http://localhost:8000/`.
-2. Hit the login button to authenticate via Zitadel.
-3. Once redirected back (with a successful auth callback), open a new tab and go to `http://localhost:8000/dump-cookie`.
-4. Copy the value of the `session_cookie` displayed on the page.
-
-```powershell
-# Substitute your copied session value here
-$sessionCookie = "YOUR_COPIED_COOKIE_VALUE"
-
-# Set up the cookie header
-$headers = @{ "Cookie" = "session=$sessionCookie"}
-$body = @{ "message" = "Hello Coach! This is PowerShell testing in." } | ConvertTo-Json
-
-try {
-    Write-Host "Hitting /chat endpoint..." -ForegroundColor Cyan
-    $response = Invoke-RestMethod -Uri "http://localhost:8000/chat" -Method Post -Headers $headers -Body $body -ContentType "application/json"
-    
-    Write-Host "`n✅ Authentication Successful!" -ForegroundColor Green
-    Write-Host "Exchange History:" -ForegroundColor Yellow
-    $response.messages | Format-Table role, content -Wrap
-} catch {
-    Write-Host "`n🛑 Authentication Failed!" -ForegroundColor Red
-    if ($_.Exception.Response) {
-        Write-Host "Status Code: $($_.Exception.Response.StatusCode.value__)"
-    }
-    Write-Host "Message: $($_.Exception.Message)"
-}
-```
-
-## 🏗️ Automated Testing
-
-We follow Test-Driven Development (TDD) via `pytest`. We have built-in async interface mocks for storage abstractions, meaning our unit tests are completely decoupled from external latency or GCP. 
-
-To run the entire test suite:
+We enforce Test-Driven Development (TDD) via `pytest`. The storage infrastructure and LLM dependencies are entirely mocked using custom async interface mocking, meaning our vast test suite requires zero external API calls or latency delays. 
 ```powershell
 uv run pytest
 ```
 
----
+### ☁️ Infrastructure & CI/CD
+Deployments are completely automated via GitHub Actions to **Google Cloud Run** using Workload Identity Federation (WIF). 
 
-## ☁️ Infrastructure Configuration (CI/CD)
+Configure the following secrets/variables in GitHub (`Settings > Secrets and variables > Actions > Variables`):
+* `GCP_PROJECT_ID`
+* `GCP_REGION` (e.g. `europe-west1`)
+* `GAR_LOCATION` 
+* `GAR_REPOSITORY`
+* `WIF_PROVIDER` (e.g. `projects/123/locations/global/workloadIdentity...`)
+* `WIF_SERVICE_ACCOUNT`
 
-To enable the automated deployment pipeline to Google Cloud Run via GitHub Actions, the following environment variables and secrets must be configured in your GitHub Repository settings (`Settings > Secrets and variables > Actions > Variables`):
-
-| Variable Name           | Description                                                                                               | Example Value                                       |
-| ----------------------- | --------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| `GCP_PROJECT_ID`        | The Google Cloud Project ID where the application will be deployed.                                       | `run-run-rest`                                      |
-| `GCP_REGION`            | The GCP region used for Cloud Run and Artifact Registry.                                                  | `europe-west1`                                       |
-| `GAR_LOCATION`          | The location for Google Artifact Registry.                                                                | `europe-west1`                                       |
-| `GAR_REPOSITORY`        | The name of the Artifact Registry repository.                                                             | `run-run-rest-repo`                                       |
-| `WIF_PROVIDER`          | The full identifier of the Workload Identity Federation Provider used to authenticate GitHub Actions.     | `projects/123/locations/global/workloadIdentity...` |
-| `WIF_SERVICE_ACCOUNT`   | The email of the GCP Service Account that the workflow will impersonate via Workload Identity Federation. | `gitblah@run-run-rest.iam.gserviceaccount.com` |
+Just push to `main` and let the serverless architecture scale to zero when you stop running!
