@@ -12,7 +12,8 @@ from agent_tools import (
     get_user_workouts_from_db, get_specific_workout_from_db,
     update_workout_notes_in_db,
     set_training_directive_in_db, remove_training_directive_from_db,
-    get_training_directives_from_db
+    get_training_directives_from_db,
+    update_user_biometrics_in_db, get_user_biometrics_from_db
 )
 from datetime import datetime, timezone
 import time
@@ -56,7 +57,16 @@ async def chat_interaction(payload: ChatPayload, request: Request, user: dict = 
                     types.Content(role=role, parts=[types.Part.from_text(text=msg["content"])])
                 )
                 
-            sys_instruct = build_system_prompt(persona, first_name, current_timestamp, active_directives_str)
+            biometrics = user.get("biometrics")
+            if biometrics:
+                biometrics_parts = []
+                for k, v in biometrics.items():
+                    biometrics_parts.append(f"{k.replace('_', ' ').title()}: {v}")
+                biometrics_str = " | ".join(biometrics_parts)
+            else:
+                biometrics_str = "No specific biometrics recorded."
+
+            sys_instruct = build_system_prompt(persona, first_name, current_timestamp, active_directives_str, biometrics_str)
             
             # Build config using tools from our agent_tools file
             config = types.GenerateContentConfig(
@@ -257,6 +267,53 @@ async def chat_interaction(payload: ChatPayload, request: Request, user: dict = 
                             types.Part.from_function_response(
                                 name="get_training_directives",
                                 response={"directives": directives_str}
+                            )
+                        )
+                    elif call.name == "update_biometrics":
+                        args = call.args
+                        height = args.get("height_cm")
+                        weight = args.get("weight_kg")
+                        birth_yr = args.get("birth_year")
+                        max_hr = args.get("max_hr")
+                        resting_hr = args.get("resting_hr")
+                        thresh_hr = args.get("threshold_hr")
+                        sex = args.get("sex")
+                        
+                        await update_user_biometrics_in_db(
+                            sub,
+                            height_cm=height,
+                            weight_kg=weight,
+                            birth_year=birth_yr,
+                            max_hr=max_hr,
+                            resting_hr=resting_hr,
+                            threshold_hr=thresh_hr,
+                            sex=sex
+                        )
+                        logger.info("Tool executed: update_biometrics", extra={
+                            "user_id": sub,
+                            "height_cm": height,
+                            "weight_kg": weight,
+                            "birth_year": birth_yr,
+                            "max_hr": max_hr,
+                            "resting_hr": resting_hr,
+                            "threshold_hr": thresh_hr,
+                            "sex": sex
+                        })
+                        
+                        function_response_parts.append(
+                            types.Part.from_function_response(
+                                name="update_biometrics",
+                                response={"status": "success"}
+                            )
+                        )
+                    elif call.name == "get_biometrics":
+                        bio_str = await get_user_biometrics_from_db(sub)
+                        logger.info("Tool executed: get_biometrics", extra={"user_id": sub})
+                        
+                        function_response_parts.append(
+                            types.Part.from_function_response(
+                                name="get_biometrics",
+                                response={"biometrics": bio_str}
                             )
                         )
                 

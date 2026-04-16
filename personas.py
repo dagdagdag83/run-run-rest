@@ -22,11 +22,12 @@ PERSONAS = {
 def get_persona(persona_id: str) -> PersonaModel:
     return PERSONAS.get(persona_id, PERSONAS["supportive-realist"])
 
-def build_system_prompt(persona: PersonaModel, first_name: str, current_timestamp: str, active_directives_str: str) -> str:
+def build_system_prompt(persona: PersonaModel, first_name: str, current_timestamp: str, active_directives_str: str, biometrics_str: str) -> str:
     prompt = BASE_SYSTEM_PROMPT_TEMPLATE
     prompt = prompt.replace("{{PERSONA_PROMPT}}", persona.system_prompt)
     prompt = prompt.replace("{{FIRST_NAME}}", first_name)
     prompt = prompt.replace("{{ACTIVE_DIRECTIVES}}", active_directives_str)
+    prompt = prompt.replace("{{BIOMETRICS}}", biometrics_str)
     prompt = prompt.replace("{{CURRENT_TIMESTAMP}}", current_timestamp)
     
     return prompt

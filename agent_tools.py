@@ -177,7 +177,7 @@ get_specific_workout_tool = {
     "function_declarations": [
         {
             "name": "get_specific_workout",
-            "description": "Use this tool to fetch the deep, kilometer-by-kilometer details (splits) of a single specific workout. You must already know the activity_id (usually obtained by calling get_recent_workouts first). Call this when the user asks specifically about a single run, or when you need to analyze pacing strategy and heart rate drift.",
+            "description": "Use this tool to fetch the deep, kilometer-by-kilometer details (splits) of a single specific workout. This includes weather data and physiological metrics like training zones and intensity scores. You must already know the activity_id (usually obtained by calling get_recent_workouts first). Call this when the user asks specifically about a single run, or when you need to analyze pacing strategy and heart rate drift.",
             "parameters": {
                 "type": "OBJECT",
                 "properties": {
@@ -234,6 +234,36 @@ get_training_directives_tool = {
     ]
 }
 
+update_biometrics_tool = {
+    "function_declarations": [
+        {
+            "name": "update_biometrics",
+            "description": "Use this tool to update the user's biological metrics. You can update one, multiple, or all fields at once. IMPORTANT: If the user gives you their age, calculate their birth_year based on the current year before passing it to this tool. Call this silently when the user shares physical stats about themselves.",
+            "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                    "height_cm": {"type": "NUMBER", "description": "Height in centimeters"},
+                    "weight_kg": {"type": "NUMBER", "description": "Weight in kilograms"},
+                    "birth_year": {"type": "INTEGER", "description": "The birth year of the user"},
+                    "max_hr": {"type": "INTEGER", "description": "Maximum heart rate"},
+                    "resting_hr": {"type": "INTEGER", "description": "Resting heart rate"},
+                    "threshold_hr": {"type": "INTEGER", "description": "Lactate threshold heart rate"},
+                    "sex": {"type": "STRING", "description": "Biological sex, 'M' or 'F'"}
+                }
+            }
+        }
+    ]
+}
+
+get_biometrics_tool = {
+    "function_declarations": [
+        {
+            "name": "get_biometrics",
+            "description": "Use this tool to retrieve the user's current physical stats and biological metrics.",
+        }
+    ]
+}
+
 AVAILABLE_TOOLS = [
     record_core_memory_tool, 
     record_milestone_tool,
@@ -246,7 +276,9 @@ AVAILABLE_TOOLS = [
     update_workout_notes_tool,
     set_training_directive_tool,
     remove_training_directive_tool,
-    get_training_directives_tool
+    get_training_directives_tool,
+    update_biometrics_tool,
+    get_biometrics_tool
 ]
 
 async def save_core_memory(user_id: str, text: str):
@@ -361,6 +393,12 @@ async def get_specific_workout_from_db(user_id: str, activity_id: int):
             indoors_str = "Unknown"
             weather_str = "No weather data"
         
+        metrics = data.get("metrics")
+        if metrics:
+            metrics_str = f"Zone: {metrics.get('primary_zone')} | Intensity: {metrics.get('intensity_score')} (Method: {metrics.get('calculation_method')})"
+        else:
+            metrics_str = "No physiological metrics available"
+
         result_parts = [
             f"Activity ID: {activity_id}",
             f"Name: {name}",
@@ -372,6 +410,7 @@ async def get_specific_workout_from_db(user_id: str, activity_id: int):
             f"Pace: {pace}/km",
             f"Avg HR: {hr} BPM",
             f"Weather: {weather_str}",
+            f"Physiology: {metrics_str}",
             f"Description: {desc}",
             f"User Subjective Notes: {notes}",
             "--- Splits ---"
@@ -456,3 +495,40 @@ async def get_training_directives_from_db(user_id: str, status: str = "active"):
     except Exception as e:
         logger.error(f"Unexpected error getting training directives for user {user_id}: {e}")
         return f"System Error: Could not retrieve training directives. {e}"
+
+async def update_user_biometrics_in_db(user_id: str, height_cm: float = None, weight_kg: float = None, birth_year: int = None, max_hr: int = None, resting_hr: int = None, threshold_hr: int = None, sex: str = None):
+    """Updates the user's biometrics document with only the provided fields."""
+    try:
+        fields = {
+            "height_cm": height_cm,
+            "weight_kg": weight_kg,
+            "birth_year": birth_year,
+            "max_hr": max_hr,
+            "resting_hr": resting_hr,
+            "threshold_hr": threshold_hr,
+            "sex": sex
+        }
+        filtered = {k: v for k, v in fields.items() if v is not None}
+        if filtered:
+            await db.put("users", user_id, {"biometrics": filtered}, merge=True)
+    except Exception as e:
+        logger.error(f"Unexpected error updating biometrics for user {user_id}: {e}")
+
+async def get_user_biometrics_from_db(user_id: str):
+    """Fetches the user's biometrics and formats them nicely."""
+    try:
+        doc = await db.get("users", user_id)
+        if not doc:
+            return "No biometrics found."
+        
+        biometrics = doc.get("biometrics", {})
+        if not biometrics:
+            return "No biometrics found."
+            
+        parts = []
+        for k, v in biometrics.items():
+            parts.append(f"{k.replace('_', ' ').title()}: {v}")
+        return " | ".join(parts)
+    except Exception as e:
+        logger.error(f"Unexpected error getting biometrics for user {user_id}: {e}")
+        return f"System Error: Could not retrieve biometrics. {e}"

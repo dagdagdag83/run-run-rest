@@ -68,15 +68,21 @@ async def receive_webhook(request: Request):
                             
                         # Now parse and store the LLM-friendly version
                         from src.features.strava.weather import enrich_with_weather
+                        from src.features.physiology.enrichment import enrich_with_physiology
                         weather_data = await enrich_with_weather(activity_data)
                         
                         transformed_data = transform_strava_activity(activity_data)
                         if weather_data:
                             transformed_data["weather"] = weather_data
                             
+                        # Add physiological enrichment
+                        physiology_data = await enrich_with_physiology(user_id, transformed_data)
+                        if physiology_data:
+                            transformed_data["metrics"] = physiology_data
+                            
                         parsed_collection_path = f"users/{user_id}/workouts"
                         await db.put(collection=parsed_collection_path, doc_id=str(object_id), data=transformed_data)
-                        logger.info(f"Saved parsed activity {object_id} to {parsed_collection_path} with weather enrichment")
+                        logger.info(f"Saved parsed activity {object_id} to {parsed_collection_path} with weather and physiology enrichment")
                             
                     except httpx.HTTPStatusError as e:
                         logger.error(f"Strava HTTPStatusError for {object_id}: {e.response.status_code} - {e.response.text}")
