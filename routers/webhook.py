@@ -67,10 +67,16 @@ async def receive_webhook(request: Request):
                             logger.error(f"Failed db.get() check for raw {object_id}!")
                             
                         # Now parse and store the LLM-friendly version
+                        from src.features.strava.weather import enrich_with_weather
+                        weather_data = await enrich_with_weather(activity_data)
+                        
                         transformed_data = transform_strava_activity(activity_data)
+                        if weather_data:
+                            transformed_data["weather"] = weather_data
+                            
                         parsed_collection_path = f"users/{user_id}/workouts"
                         await db.put(collection=parsed_collection_path, doc_id=str(object_id), data=transformed_data)
-                        logger.info(f"Saved parsed activity {object_id} to {parsed_collection_path}")
+                        logger.info(f"Saved parsed activity {object_id} to {parsed_collection_path} with weather enrichment")
                             
                     except httpx.HTTPStatusError as e:
                         logger.error(f"Strava HTTPStatusError for {object_id}: {e.response.status_code} - {e.response.text}")

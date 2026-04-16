@@ -353,15 +353,25 @@ async def get_specific_workout_from_db(user_id: str, activity_id: int):
         sport_type = data.get("sport_type", "Unknown")
         device_name = data.get("device_name", "Unknown")
         
+        weather = data.get("weather")
+        if weather:
+            indoors_str = str(weather.get("likely_indoors", False))
+            weather_str = f"{weather.get('temp_c')}C, {weather.get('condition')}, {weather.get('wind_kph')}km/h wind"
+        else:
+            indoors_str = "Unknown"
+            weather_str = "No weather data"
+        
         result_parts = [
             f"Activity ID: {activity_id}",
             f"Name: {name}",
             f"Date: {date}",
             f"Sport Category: {sport_type}",
             f"Device: {device_name}",
+            f"Likely Indoors: {indoors_str}",
             f"Distance: {dist}km",
             f"Pace: {pace}/km",
             f"Avg HR: {hr} BPM",
+            f"Weather: {weather_str}",
             f"Description: {desc}",
             f"User Subjective Notes: {notes}",
             "--- Splits ---"
@@ -369,15 +379,15 @@ async def get_specific_workout_from_db(user_id: str, activity_id: int):
         
         splits = data.get("splits", [])
         if not splits:
-            result_parts.append("No split data available.")
+            result_parts.append("No split data available")
         else:
             for idx, split in enumerate(splits):
                 s_dist = split.get("distance_km", 0)
                 s_pace = split.get("average_pace_min_km", "N/A")
                 s_hr = split.get("average_heartrate", "N/A")
-                result_parts.append(f"Split {idx + 1}: {s_pace}/km, {s_hr} BPM.")
+                result_parts.append(f"Split {idx + 1}: {s_pace}/km, {s_hr} BPM")
         
-        return "\n".join(result_parts)
+        return " | ".join(result_parts)
     except Exception as e:
         logger.error(f"Unexpected error in get_specific_workout_from_db: {e}")
         return f"System Error: Could not retrieve workout. {e}"

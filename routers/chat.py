@@ -193,7 +193,7 @@ async def chat_interaction(payload: ChatPayload, request: Request, user: dict = 
                             user_id=sub,
                             activity_id=activity_id
                         )
-                        logger.info("Tool executed: get_specific_workout", extra={"user_id": sub, "activity_id": activity_id})
+                        logger.info("Tool executed: get_specific_workout", extra={"user_id": sub, "activity_id": activity_id, "workout_details": workout_str})
                         function_response_parts.append(
                             types.Part.from_function_response(
                                 name="get_specific_workout",
