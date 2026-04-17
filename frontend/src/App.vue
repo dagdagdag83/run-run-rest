@@ -56,7 +56,16 @@ const formatMessage = (msg) => {
         const utcDateStr = timeMatch[1].replace(' ', 'T') + ':00Z';
         const dateObj = new Date(utcDateStr);
         if (!isNaN(dateObj)) {
-            displayTime = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const today = new Date();
+            const isToday = dateObj.getDate() === today.getDate() &&
+                dateObj.getMonth() === today.getMonth() &&
+                dateObj.getFullYear() === today.getFullYear();
+                
+            if (isToday) {
+                displayTime = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            } else {
+                displayTime = dateObj.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ', ' + dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            }
             contentText = contentText.substring(timeMatch[0].length);
         }
     }

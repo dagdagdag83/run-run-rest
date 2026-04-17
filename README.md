@@ -13,7 +13,7 @@ It talks to you through swappable persona modules (want a tough-love Marine or a
 ## ✨ Project Highlights & Capabilities
 
 ### 🧠 Agentic Memory & Contextual Coaching
-Built on a robust agentic orchestration loop equipped with dynamic Vertex AI function-calling tools. The coach seamlessly manages its own memory state—silently recording high-signal "Core Memories" (injuries, life stress), tracking your latest milestones (PRs), and managing your biometrics (weight, Max HR).
+Built on a robust agentic orchestration loop equipped with dynamic Vertex AI function-calling tools. The coach seamlessly manages its own memory state—silently recording high-signal "Core Memories" (injuries, life stress), tracking your latest milestones (PRs), and managing your biometrics (weight, Max HR). To preserve tokens and speed, the active chat context operates on a strict 7-day sliding window. When you refer back to older conversations, a dedicated "Librarian" sub-agent (running on Gemini Flash Preview) is rapidly spun up to query your historical dataset, extracting relevant advice and bringing it back to the main AI as a dense summary.
 
 ### 🎯 Structured Training Blocks & Directives
 Shift from passive tracking to active goal-oriented coaching. Define precise "Training Blocks" alongside daily maintenance habits. You can inject "Active Training Directives" (e.g., "Enforce an 80/20 polarized philosophy," or "Focus on half-marathon pacing"), and the AI will proactively check your incoming split data against these strict rules to keep you honest.
@@ -37,6 +37,7 @@ We built `run-run-rest` to push the limits of what a stateless, single-agent sys
 * **Idempotent Tool Execution Loop:** A recursive agentic `while` loop processes multiple sequential tool calls (e.g. reading your recent runs, identifying a specific activity, then querying the kilometer splits) inside a single user interaction turn, ensuring the final conversational response is fully informed.
 * **Markdown Module Personas:** The agent's cognitive "Persona" is fully decoupled into hot-reloadable `.md` files. Switch from the `SUPPORTIVE_REALIST` to a new archetype instantly without touching the core prompt engine.
 * **Autonomous Memory Commitments:** The agent is given explicit behavioral permissions to silently execute `record_core_memory` and `update_workout_notes` tool calls. It doesn't ask permission to save your data; it acts autonomously when it detects high-signal physiological or psychological events.
+* **Context Pruning & Librarian Sub-Agents:** The main chat loop dynamically enforces a strict 7-day sliding window on thread history. To combat "amnesia" while preserving lightning-fast generation and low token burn, the active agent can dynamically spawn a dedicated "Librarian" sub-agent (`gemini-3.1-flash-lite-preview`) to execute Retrieval-Augmented Generation (RAG) against years of historical chat logs, returning a highly-dense summary block on demand.
 
 ---
 

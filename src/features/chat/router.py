@@ -15,7 +15,8 @@ from src.features.chat.tools import (
     get_training_directives_from_db,
     update_user_biometrics_in_db, get_user_biometrics_from_db,
     set_training_block_in_db, update_training_habits_in_db,
-    mark_block_achieved_in_db, get_training_blocks_from_db
+    mark_block_achieved_in_db, get_training_blocks_from_db,
+    prune_chat_context, recall_past_conversation
 )
 from src.features.chat.constants import ANCHOR_PROMPT
 from datetime import datetime, timezone
@@ -78,13 +79,16 @@ async def chat_interaction(payload: ChatPayload, request: Request, user: dict = 
     
     if ai_client:
         try:
+            # Step 1: The Sliding Window (Context Pruning)
+            messages_to_process = prune_chat_context(messages, days=7)
+            
             genai_contents = []
-            for i, msg in enumerate(messages):
+            for i, msg in enumerate(messages_to_process):
                 role = "model" if msg["role"] == "assistant" else msg["role"]
                 
                 text_content = msg["content"]
                 # Intercept the payload: append ANCHOR_PROMPT to the final user message
-                if i == len(messages) - 1 and role == "user":
+                if i == len(messages_to_process) - 1 and role == "user":
                     text_content += ANCHOR_PROMPT
                     
                 genai_contents.append(
@@ -400,6 +404,25 @@ async def chat_interaction(payload: ChatPayload, request: Request, user: dict = 
                                 response={"blocks": blocks_str}
                             )
                         )
+                    elif call.name == "recall_past_conversation":
+                        topic = call.args.get("topic")
+                        approximate_days_ago = call.args.get("approximate_days_ago")
+                        
+                        try:
+                            approximate_days_ago = int(approximate_days_ago) if approximate_days_ago is not None else 30
+                        except (ValueError, TypeError):
+                            approximate_days_ago = 30
+                            
+                        if topic:
+                            summary = await recall_past_conversation(sub, topic, approximate_days_ago)
+                            logger.info("Tool executed: recall_past_conversation", extra={"user_id": sub, "topic": topic})
+                            
+                            function_response_parts.append(
+                                types.Part.from_function_response(
+                                    name="recall_past_conversation",
+                                    response={"summary": summary}
+                                )
+                            )
                 
                 genai_contents.append(types.Content(role="function", parts=function_response_parts))
                 
