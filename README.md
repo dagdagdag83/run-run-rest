@@ -1,51 +1,59 @@
-<div align="center">
-  <h1>🏃‍♂️🤖 run-run-rest</h1>
-  <p><strong>The Highly Opinionated, Agentic AI Running Coach </strong></p>
-</div>
+# 🏃‍♂️🤖 run-run-rest
 
-**run-run-rest** is a serverless, agentic fitness harness that operates as your autonomous personal coach. Designed to seamlessly ingest your continuous exercise data (like from Strava), it maintains deep, long-term contextual memory of your highs, lows, PRs, and injuries. 
+## The Highly Opinionated, Autonomous Agentic Running Coach
 
-It talks to you through distinct personas, analyzes your kilometer splits, complains about your skyrocketing heart rate, and makes sure you never skip leg day. 🏋️‍♂️✨
+### Check it out: <a href="https://runrun.rest">https://runrun.rest</a> 👀🤩
+
+**run-run-rest** isn't just a chatbot; it's a serverless, agentic fitness harness operating as your autonomous, long-term athletic coach. Engineered to ingest live webhook data directly from Strava, it maintains a deep, evolving cognitive memory of your physiology, your highs and lows, and your precise training blocks. 
+
+It talks to you through swappable persona modules (want a tough-love Marine or a Data Scientist?), analyzes your kilometer-by-kilometer splits, yells at you for skyrocketing your heart rate in Zone 2, and strictly holds you accountable to your own training directives. 🏋️‍♂️✨
 
 ---
 
 ## ✨ Project Highlights & Capabilities
 
 ### 🧠 Agentic Memory & Contextual Coaching
-It’s not just a wrapper over a chat API. **run-run-rest** utilizes an agentic orchestration loop equipped with dynamic function-calling tools. It accesses your core memories, athlete biometrics, and milestones. It knows if you are nursing an Achilles injury, when your last 5K PR was, and dynamically adjusts its coaching context based on your temporal history.
+Built on a robust agentic orchestration loop equipped with dynamic Vertex AI function-calling tools. The coach seamlessly manages its own memory state—silently recording high-signal "Core Memories" (injuries, life stress), tracking your latest milestones (PRs), and managing your biometrics (weight, Max HR).
 
-### 📡 Automated Strava Ingestion
-Zero manual data entry. Through a highly integrated webhook pipeline, your raw Strava activity payloads are seamlessly ingested into the platform the moment you finish your run.
+### 🎯 Structured Training Blocks & Directives
+Shift from passive tracking to active goal-oriented coaching. Define precise "Training Blocks" alongside daily maintenance habits. You can inject "Active Training Directives" (e.g., "Enforce an 80/20 polarized philosophy," or "Focus on half-marathon pacing"), and the AI will proactively check your incoming split data against these strict rules to keep you honest.
 
-### ⛈️ Environmental & Physiological Enrichment 
-Once ingested, a run isn't just distance and time. The pipeline cross-references your GPS coordinates and timestamps against the **Open-Meteo API** to pull historical weather conditions (Was it a grueling headwind? Freezing rain?). It then enriches your data with our tiered physiological algorithms, calculating holistic intensity scores and intelligent dynamic heart rate zones (falling back through LTHR > Karvonen > Standard Max HR).
+### 📡 Automated Pipeline & Environmental Enrichment
+Zero manual data entry. Through a highly resilient webhook pipeline, your Strava activity payloads are seamlessly ingested the moment you stop your watch. The backend pipeline maps your GPS runs against the **Open-Meteo API** to pull precise historical weather (was there a crosswind affecting your pace?), and enriches your metadata via tiered physiological algorithms (calculating zones via LTHR > Karvonen > Max HR).
 
-### 🩺 "Scout" Tactical Assessments
-Before the primary coaching agent even looks at your run, an ultra-fast LLM sub-agent (the "Scout") automatically analyzes your specific pacing strategy and cardiac drift in the background. It attaches a pristine clinical metadata summary to your workout record so your coach has an instant, unbiased tactical overview.
+### 🩺 "Scout" Tactical LLM Assessments
+Before the primary Coaching Agent even looks at your run, an ultra-fast LLM sub-agent (the "Scout" running on Gemini Flash-Lite) intercepts the webhook stream. It automatically analyzes your pacing strategy and cardiac drift in the background, attaching a pristine clinical metadata summary to your Firestore record for an instant, unbiased tactical overview.
 
-### 🗣️ Proactive Directives & Personas
-Want a drill instructor? Or a supportive yogi? The AI adapts via distinct personas. You can issue "Active Training Directives" (e.g., "Enforce an 80/20 Zone 2 philosophy this block," or "Focus on half-marathon pacing"), and the AI will proactively check your incoming specific split data against these directives to keep you honest.
+### 📊 Granular Split Analysis
+Forget simple distance and time. The agent proactively queries your runs down to the kilometer-by-kilometer level—extracting pace gradients, active vs rest times, and specific heart rate loops. Coupled with the integrated Workout Notes tools, it bridges the gap between quantitative metrics and your subjective RPE (Rate of Perceived Exertion).
 
-### 📊 Granular Split Analysis & Qualitative Notes
-The agent can query your runs down to the kilometer-by-kilometer level—extracting pace, elevation, and heart rate for deep analytical coaching. You can also provide subjective feedback directly to your database ("Felt sluggish today") using the integrated Workout Notes tools, guaranteeing both qualitative and quantitative context tracking.
+---
+
+## 🤖 Anatomy of the Agentic Harness
+
+We built `run-run-rest` to push the limits of what a stateless, single-agent system can achieve using Google Gemini. Here are the core technical feats of the harness architecture:
+
+* **State-Hydrated System Prompts:** Instead of burning tokens forcing the LLM to blindly query for its context every turn, the router architecture dynamically hydrates the System Prompt `<athlete_context>` explicitly pointing to your active Firestore records. The agent instantly knows your `<active_training_block>`, `<active_directives>`, and realtime `<biometrics>` before a single token generates.
+* **Idempotent Tool Execution Loop:** A recursive agentic `while` loop processes multiple sequential tool calls (e.g. reading your recent runs, identifying a specific activity, then querying the kilometer splits) inside a single user interaction turn, ensuring the final conversational response is fully informed.
+* **Markdown Module Personas:** The agent's cognitive "Persona" is fully decoupled into hot-reloadable `.md` files. Switch from the `SUPPORTIVE_REALIST` to a new archetype instantly without touching the core prompt engine.
+* **Autonomous Memory Commitments:** The agent is given explicit behavioral permissions to silently execute `record_core_memory` and `update_workout_notes` tool calls. It doesn't ask permission to save your data; it acts autonomously when it detects high-signal physiological or psychological events.
 
 ---
 
 ## 🛠️ The Tech Details
 
-We designed the architecture to adhere to **KISS** (Keep It Simple, Stupid) and Extreme Programming (XP) principles. We use a dedicated Vue 3 / Vite frontend alongside `FastAPI` power serving our agentic AI workflows.
+We designed the architecture to adhere to **KISS** (Keep It Simple, Stupid) and Extreme Programming (XP) principles.
 
-> **Built with AI:** This entire project was created with **Google Gemini** and **Antigravity**! 🚀
+> **Built with AI:** This entire project was built by **Google Gemini** using the **Antigravity** agent framework. 🚀
 
 ### 🚀 Core Architecture & Stack
-* **Vertical Slice Architecture**: Code is naturally organized by feature (e.g., `src/features/strava/weather`) rather than technical concern. This isolated, feature-first structure is ideally suited for agentic AI coding.
-* **Agentic Engine**: Google GenAI SDK (Gemini 3.1 Flash for the Coach; Flash-Lite for the Scout) running on Vertex AI.
+* **Vertical Slice Architecture**: Code is naturally organized by feature (e.g., `src/features/strava/auth`) rather than technical concern. This isolated, feature-first structure is highly optimal for agentic AI coding methodologies.
+* **Agentic Engine**: Google GenAI SDK (Gemini 3.1 Flash for the active Coach; Flash-Lite for the webhook Scout) running on Vertex AI.
 * **Server**: [FastAPI](https://fastapi.tiangolo.com/) for core REST routing mechanics and static UI serving.
 * **Package Management**: [uv](https://github.com/astral-sh/uv) - blazing fast, strict dependency handling for Python 3.14.
-* **Auth**: Secure OIDC session management using [Authlib](https://docs.authlib.org/) & Zitadel.
-* **Storage**: Google Cloud Firestore (NoSQL) for scale-to-zero, stateless memory isolation.
-* **Data Validation**: Pydantic.
-* **Frontend**: Vue 3 (Composition API), Vite, Tailwind CSS, running inside the `frontend/` directory.
+* **Auth**: Secure OIDC session management using Zitadel.
+* **Storage**: Google Cloud Firestore (NoSQL) for scale-to-zero, extreme-performance stateless memory isolation.
+* **Frontend**: Beautiful "Tactical Terminal" built in Vue 3 (Composition API), Vite, and Tailwind CSS.
 
 ### 💻 Local Environment Setup
 
@@ -63,15 +71,15 @@ Your local environment gracefully detects Google Cloud credentials or falls back
    ```powershell
    gcloud auth application-default login
    ```
-6. **Build the frontend:**
+5. **Build the frontend:**
    ```powershell
    cd frontend
    npm ci
    npm run build
    cd ..
    ```
-   *This automatically generates the single `index.html` file into the `static/` directory.*
-7. **Run the server:**
+   *This automatically generates the single `index.html` file into the backend `static/` directory.*
+6. **Run the server:**
    ```powershell
    uv run main.py
    ```
