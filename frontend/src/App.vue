@@ -170,10 +170,10 @@ onMounted(() => {
                 <span v-else-if="formatMessage(msg).displayTime" class="text-[10px] text-run-run-rest-muted mb-1 px-1">{{ formatMessage(msg).displayTime }}</span>
                 
                 <!-- Bubble -->
-                <div v-if="msg.role === 'user'" class="bg-run-run-rest-base text-slate-100 rounded-2xl rounded-tr-none px-4 py-3 text-sm">
+                <div v-if="msg.role === 'user'" class="bg-run-run-rest-base text-slate-100 rounded-2xl rounded-tr-none px-4 py-3 text-sm leading-[1.8]">
                     {{ formatMessage(msg).contentText }}
                 </div>
-                <div v-else class="bg-run-run-rest-primary/20 border border-run-run-rest-primary/30 text-slate-100 rounded-2xl rounded-tl-none px-6 py-4 text-sm prose prose-invert prose-sm max-w-none" v-html="renderMarkdown(formatMessage(msg).contentText)"></div>
+                <div v-else class="bg-run-run-rest-primary/20 border border-run-run-rest-primary/30 text-slate-100 rounded-2xl rounded-tl-none px-6 py-4 text-sm prose prose-invert prose-sm max-w-none prose-p:leading-[1.8] prose-li:leading-[1.8]" v-html="renderMarkdown(formatMessage(msg).contentText)"></div>
               </div>
 
               <!-- Waiting indicator -->
@@ -217,5 +217,10 @@ onMounted(() => {
 /* Any custom overrides or imported typography plugin styles would go here */
 body {
     background-color: #0C0F0A; /* fallback */
+}
+
+/* Force airy line height on chat bubbles */
+.prose p, .prose li {
+    line-height: 1.8 !important;
 }
 </style>

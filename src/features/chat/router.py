@@ -13,7 +13,9 @@ from src.features.chat.tools import (
     update_workout_notes_in_db,
     set_training_directive_in_db, remove_training_directive_from_db,
     get_training_directives_from_db,
-    update_user_biometrics_in_db, get_user_biometrics_from_db
+    update_user_biometrics_in_db, get_user_biometrics_from_db,
+    set_training_block_in_db, update_training_habits_in_db,
+    mark_block_achieved_in_db, get_training_blocks_from_db
 )
 from src.features.chat.constants import ANCHOR_PROMPT
 from datetime import datetime, timezone
@@ -36,6 +38,31 @@ async def chat_interaction(payload: ChatPayload, request: Request, user: dict = 
         active_directives_str = "\n".join(directives_list)
     
     persona = get_persona(selected_persona_id)
+    logger.info("Persona chosen for interaction", extra={"user_id": sub, "persona_id": persona.id})
+    
+    # Query for active training block
+    active_block_str = "No active training block set. Proactively discuss setting one."
+    try:
+        from google.cloud import firestore as firestore_module
+        if hasattr(db, '_db'):
+            collection_ref = db._db.collection(f"users/{sub}/training_blocks")
+            active_docs = await collection_ref.where(filter=firestore_module.FieldFilter("status", "==", "active")).limit(1).get()
+            if active_docs:
+                d = active_docs[0].to_dict()
+                block_parts = [
+                    f"Phase Name: {d.get('phase_name', 'Unnamed')}",
+                    f"Target Date: {d.get('target_date', 'N/A')}",
+                    f"Primary Target: {d.get('primary_target', 'N/A')}"
+                ]
+                sec = d.get('secondary_targets', [])
+                if sec:
+                    block_parts.append(f"Secondary Targets: {', '.join(sec)}")
+                habits = d.get('maintenance_habits', [])
+                if habits:
+                    block_parts.append(f"Maintenance Habits: {', '.join(habits)}")
+                active_block_str = "\n".join(block_parts)
+    except Exception as e:
+        logger.error(f"Error fetching active training block for {sub}: {e}")
     
     session_data = await db.get(f"users/{sub}/chat_sessions", "current_session")
     if not session_data:
@@ -73,7 +100,8 @@ async def chat_interaction(payload: ChatPayload, request: Request, user: dict = 
             else:
                 biometrics_str = "No specific biometrics recorded."
 
-            sys_instruct = build_system_prompt(persona, first_name, current_timestamp, active_directives_str, biometrics_str)
+            sys_instruct = build_system_prompt(persona, first_name, current_timestamp, active_directives_str, biometrics_str, active_block_str)
+            logger.info("System prompt generated", extra={"user_id": sub, "prompt_length": len(sys_instruct)})
             
             # Build config using tools from our agent_tools file
             config = types.GenerateContentConfig(
@@ -321,6 +349,55 @@ async def chat_interaction(payload: ChatPayload, request: Request, user: dict = 
                             types.Part.from_function_response(
                                 name="get_biometrics",
                                 response={"biometrics": bio_str}
+                            )
+                        )
+                    elif call.name == "set_training_block":
+                        args = call.args
+                        await set_training_block_in_db(
+                            user_id=sub,
+                            phase_name=args.get("phase_name"),
+                            primary_target=args.get("primary_target"),
+                            secondary_targets=args.get("secondary_targets", []),
+                            maintenance_habits=args.get("maintenance_habits", []),
+                            target_date=args.get("target_date")
+                        )
+                        logger.info("Tool executed: set_training_block", extra={"user_id": sub})
+                        function_response_parts.append(
+                            types.Part.from_function_response(
+                                name="set_training_block",
+                                response={"status": "success"}
+                            )
+                        )
+                    elif call.name == "update_training_habits":
+                        args = call.args
+                        habits_to_add = args.get("habits_to_add", [])
+                        habits_to_remove = args.get("habits_to_remove", [])
+                        await update_training_habits_in_db(sub, habits_to_add, habits_to_remove)
+                        logger.info("Tool executed: update_training_habits", extra={"user_id": sub})
+                        function_response_parts.append(
+                            types.Part.from_function_response(
+                                name="update_training_habits",
+                                response={"status": "success"}
+                            )
+                        )
+                    elif call.name == "mark_block_achieved":
+                        summary = call.args.get("summary_notes", "No summary provided.")
+                        await mark_block_achieved_in_db(sub, summary)
+                        logger.info("Tool executed: mark_block_achieved", extra={"user_id": sub})
+                        function_response_parts.append(
+                            types.Part.from_function_response(
+                                name="mark_block_achieved",
+                                response={"status": "success"}
+                            )
+                        )
+                    elif call.name == "get_training_blocks":
+                        status_filter = call.args.get("status")
+                        blocks_str = await get_training_blocks_from_db(sub, status_filter)
+                        logger.info("Tool executed: get_training_blocks", extra={"user_id": sub})
+                        function_response_parts.append(
+                            types.Part.from_function_response(
+                                name="get_training_blocks",
+                                response={"blocks": blocks_str}
                             )
                         )
                 

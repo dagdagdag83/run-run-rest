@@ -6,4 +6,4 @@ class ChatPayload(BaseModel):
 class PersonaModel(BaseModel):
     id: str
     name: str
-    system_prompt: str
+    persona_prompt: str

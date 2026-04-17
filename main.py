@@ -42,4 +42,4 @@ async def get_logo_small():
 if __name__ == "__main__":
     import uvicorn
     port = 8000 if os.environ.get("ENVIRONMENT") == "production" else 80
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True, reload_includes=["*.html", "personas/*.md"])
