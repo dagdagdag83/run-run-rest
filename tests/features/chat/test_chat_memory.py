@@ -1,7 +1,7 @@
 import pytest
 from datetime import datetime, timezone, timedelta
 from unittest.mock import patch, AsyncMock
-from src.features.chat.tools import (
+from src.features.chat.librarian.tools import (
     get_fuzzy_time_window,
     fetch_historical_chat,
     summarize_past_chat,
@@ -29,7 +29,7 @@ def test_prune_chat_context():
     assert "recent assistant msg" in pruned[-1]["content"]
 
 def test_get_fuzzy_time_window():
-    with patch("src.features.chat.tools.datetime") as mock_datetime:
+    with patch("src.features.chat.librarian.tools.datetime") as mock_datetime:
         mock_datetime.now.return_value = datetime(2026, 4, 17, tzinfo=timezone.utc)
         start, end = get_fuzzy_time_window(10)
         # target = 2026-04-07
@@ -39,7 +39,7 @@ def test_get_fuzzy_time_window():
         assert end == datetime(2026, 4, 22, tzinfo=timezone.utc)
 
 @pytest.mark.asyncio
-@patch("src.features.chat.tools.db")
+@patch("src.features.chat.librarian.tools.db")
 async def test_fetch_historical_chat(mock_db):
     start = datetime(2026, 3, 1, tzinfo=timezone.utc)
     end = datetime(2026, 3, 31, tzinfo=timezone.utc)
