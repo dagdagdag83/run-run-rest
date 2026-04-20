@@ -16,7 +16,7 @@ router = APIRouter()
 async def chat_interaction(payload: ChatPayload, request: Request, user: dict = Depends(get_current_user)):
     sub = user.get("sub")
     first_name = user.get("given_name") or user.get("name", "User")
-    selected_persona_id = user.get("selected_persona", "supportive-realist")
+    selected_persona_id = user.get("selected_persona", "cheering-coach")
     active_directives = user.get("active_directives", [])
     
     active_directives_str = "No active directives."
