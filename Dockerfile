@@ -10,6 +10,30 @@ WORKDIR /app
 # Enable bytecode compilation
 ENV UV_COMPILE_BYTECODE=1
 
+# Install system dependencies required by Kaleido (Chromium headless)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    fontconfig \
+    libfontconfig1 \
+    libnss3 \
+    libglib2.0-0 \
+    libx11-6 \
+    libxext6 \
+    libxcomposite1 \
+    libxcursor1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxi6 \
+    libxrandr2 \
+    libxrender1 \
+    libxtst6 \
+    libasound2 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libpangocairo-1.0-0 \
+    libcups2 \
+    libgl1-mesa-glx \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copy dependency manifests
 COPY pyproject.toml uv.lock ./
 
