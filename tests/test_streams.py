@@ -1,12 +1,12 @@
 import pytest
 import base64
 from unittest.mock import AsyncMock, patch, MagicMock
-from src.features.strava.streams import generate_stream_chart_base64, fetch_activity_streams
+from src.features.strava.visualizer.streams import generate_stream_chart_base64, fetch_activity_streams
 
 @pytest.mark.asyncio
 async def test_fetch_activity_streams_success(mocker):
     # Mock token
-    mocker.patch("src.features.strava.streams.get_valid_strava_token", return_value="fake_token")
+    mocker.patch("src.features.strava.visualizer.streams.get_valid_strava_token", return_value="fake_token")
     
     mock_response = MagicMock()
     mock_response.json.return_value = {
@@ -19,7 +19,7 @@ async def test_fetch_activity_streams_success(mocker):
     mock_client_instance.get.return_value = mock_response
     
     # Mock httpx.AsyncClient context manager
-    mock_client_cls = mocker.patch("src.features.strava.streams.httpx.AsyncClient")
+    mock_client_cls = mocker.patch("src.features.strava.visualizer.streams.httpx.AsyncClient")
     mock_client_cls.return_value.__aenter__.return_value = mock_client_instance
     
     result = await fetch_activity_streams(12345, "user_1")

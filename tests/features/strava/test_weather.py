@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, AsyncMock
-from src.features.strava.weather import enrich_with_weather
+from src.features.strava.weather.service import enrich_with_weather
 import httpx
 
 @pytest.fixture
@@ -26,7 +26,7 @@ def mock_open_meteo_response():
     }
 
 @pytest.mark.asyncio
-@patch("src.features.strava.weather.httpx.AsyncClient")
+@patch("src.features.strava.weather.service.httpx.AsyncClient")
 async def test_weather_success(mock_client_cls, sample_activity, mock_open_meteo_response):
     mock_instance = AsyncMock()
     mock_client_cls.return_value.__aenter__.return_value = mock_instance
@@ -53,7 +53,7 @@ async def test_weather_success(mock_client_cls, sample_activity, mock_open_meteo
     assert call_args.kwargs["params"]["longitude"] == 2.3522
 
 @pytest.mark.asyncio
-@patch("src.features.strava.weather.httpx.AsyncClient")
+@patch("src.features.strava.weather.service.httpx.AsyncClient")
 async def test_weather_empty_latlng(mock_client_cls, mock_open_meteo_response):
     mock_instance = AsyncMock()
     mock_client_cls.return_value.__aenter__.return_value = mock_instance
@@ -79,7 +79,7 @@ async def test_weather_empty_latlng(mock_client_cls, mock_open_meteo_response):
     assert call_args.kwargs["params"]["longitude"] == 10.39
 
 @pytest.mark.asyncio
-@patch("src.features.strava.weather.httpx.AsyncClient")
+@patch("src.features.strava.weather.service.httpx.AsyncClient")
 async def test_weather_http_error(mock_client_cls, sample_activity):
     mock_instance = AsyncMock()
     mock_client_cls.return_value.__aenter__.return_value = mock_instance
@@ -99,7 +99,7 @@ async def test_weather_http_error(mock_client_cls, sample_activity):
     (None, True, True),
 ])
 @pytest.mark.asyncio
-@patch("src.features.strava.weather.httpx.AsyncClient")
+@patch("src.features.strava.weather.service.httpx.AsyncClient")
 async def test_weather_likely_indoors_variations(mock_client_cls, latlng, trainer_flag, expected_indoors, mock_open_meteo_response):
     mock_instance = AsyncMock()
     mock_client_cls.return_value.__aenter__.return_value = mock_instance

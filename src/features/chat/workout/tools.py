@@ -3,7 +3,7 @@ from google.cloud import firestore
 from datetime import datetime, timezone, timedelta
 from src.shared.dependencies import db
 from src.shared.logger import logger
-from src.features.strava.streams import fetch_activity_streams, generate_stream_chart_base64
+from src.features.strava.visualizer.streams import fetch_activity_streams, generate_stream_chart_base64
 
 get_recent_workouts_tool = {
     "function_declarations": [

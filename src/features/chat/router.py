@@ -65,6 +65,7 @@ async def chat_interaction(payload: ChatPayload, request: Request, user: dict = 
     # Store the user message
     messages.append({"role": "user", "content": payload.message})
     
+    all_generated_images = []
     if ai_client:
         try:
             # Step 1: The Sliding Window (Context Pruning)
@@ -112,7 +113,6 @@ async def chat_interaction(payload: ChatPayload, request: Request, user: dict = 
             logger.info(f"Gemini API call completed", extra={"user_id": sub, "duration_s": round(duration, 2), "iteration": 0})
             
             iterations = 0
-            all_generated_images = []
             while response.function_calls and iterations < 5:
                 iterations += 1
                 # Add model's tool calls to the history context
@@ -147,10 +147,6 @@ async def chat_interaction(payload: ChatPayload, request: Request, user: dict = 
                 logger.info(f"Gemini API tool resubmission completed", extra={"user_id": sub, "duration_s": round(duration, 2), "iteration": iterations})
                 
             bot_text = response.text or "I'm sorry, I couldn't generate a response."
-            
-            for b64 in all_generated_images:
-                bot_text += f"\n\n![Workout Stream](data:image/png;base64,{b64})"
-                
             messages.append({"role": "assistant", "content": bot_text})
 
         except Exception as e:
@@ -160,8 +156,12 @@ async def chat_interaction(payload: ChatPayload, request: Request, user: dict = 
         # Mock assistant response fallback
         messages.append({"role": "assistant", "content": f"AI Client unavailable. You have {len(messages)//2} exchanges so far."})
     
-    # Save back to database
+    # Save back to database WITHOUT the massive data URIs
     await db.put(f"users/{sub}/chat_sessions", "current_session", {"messages": messages}, merge=True)
+    
+    # Inject ephemeral images purely for frontend immediately after saving
+    for b64 in all_generated_images:
+        messages[-1]["content"] += f"\n\n![Workout Stream](data:image/png;base64,{b64})"
     
     logger.info("Chat message processed", request=request, extra={
         "user_id": sub,

@@ -67,7 +67,7 @@ async def receive_webhook(request: Request):
                             logger.error(f"Failed db.get() check for raw {object_id}!")
                             
                         # Now parse and store the LLM-friendly version
-                        from src.features.strava.weather import enrich_with_weather
+                        from src.features.strava.weather.service import enrich_with_weather
                         from src.features.strava.physiology.enrichment import enrich_with_physiology
                         from src.features.strava.scout.assessment import enrich_with_scout_assessment
                         weather_data = await enrich_with_weather(activity_data)

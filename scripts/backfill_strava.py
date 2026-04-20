@@ -22,7 +22,7 @@ from src.shared.logger import logger
 from src.shared.dependencies import db
 from src.features.strava.auth import get_valid_strava_token
 from src.features.strava.parser import transform_strava_activity
-from src.features.strava.weather import enrich_with_weather
+from src.features.strava.weather.service import enrich_with_weather
 from src.features.strava.physiology.enrichment import enrich_with_physiology
 from src.features.strava.scout.assessment import enrich_with_scout_assessment
 
