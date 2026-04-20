@@ -28,7 +28,7 @@ Before the primary Coaching Agent even looks at your run, an ultra-fast LLM sub-
 Forget simple distance and time. The agent proactively queries your runs down to the kilometer-by-kilometer level—extracting pace gradients, active vs rest times, and specific heart rate loops. Coupled with the integrated Workout Notes tools, it bridges the gap between quantitative metrics and your subjective RPE (Rate of Perceived Exertion).
 
 ### 📈 Multimodal Stream Visualization
-Numbers only tell half the story. The agent leverages Plotly to dynamically generate real-time visual telemetry (Heart Rate vs. Pace streams) entirely in memory. It feeds this Base64-encoded PNG directly into Gemini's Vision API as a multimodal prompt, perfectly diagnosing pacing consistency and cardiac drift while immediately rendering a gorgeous, zoomable chart right inside your chat interface.
+Numbers only tell half the story. The agent leverages Plotly to dynamically generate real-time visual telemetry (Heart Rate, Pace, and Elevation streams) entirely in memory. It feeds this Base64-encoded PNG directly into Gemini's Vision API as a multimodal prompt, perfectly diagnosing pacing consistency and cardiac drift against terrain profiles while immediately rendering a gorgeous, stacked telemetry chart right inside your chat interface.
 
 ---
 

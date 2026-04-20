@@ -12,7 +12,8 @@ async def test_fetch_activity_streams_success(mocker):
     mock_response.json.return_value = {
         "time": {"data": [0, 1, 2]},
         "heartrate": {"data": [140, 145, 150]},
-        "velocity_smooth": {"data": [3.5, 3.6, 3.4]}
+        "velocity_smooth": {"data": [3.5, 3.6, 3.4]},
+        "altitude": {"data": [10.0, 10.5, 11.0]}
     }
     
     mock_client_instance = AsyncMock()
@@ -32,7 +33,8 @@ def test_generate_stream_chart_base64():
     streams = {
         "time": {"data": [0, 60, 120]}, # 2 mins
         "heartrate": {"data": [140, 145, 150]},
-        "velocity_smooth": {"data": [3.33, 4.0, 5.0]} # Pace min/km equivalent: 5.0, 4.16, 3.33
+        "velocity_smooth": {"data": [3.33, 4.0, 5.0]}, # Pace min/km equivalent: 5.0, 4.16, 3.33
+        "altitude": {"data": [10.0, 15.0, 20.0]}
     }
     
     b64_str = generate_stream_chart_base64(streams)
@@ -48,7 +50,8 @@ def test_generate_stream_chart_base64_stopped():
     streams = {
         "time": {"data": [0, 60, 120]},
         "heartrate": {"data": [140, 145, 150]},
-        "velocity_smooth": {"data": [3.33, 0.0, 5.0]} # Missing/stopped pace shouldn't crash
+        "velocity_smooth": {"data": [3.33, 0.0, 5.0]}, # Missing/stopped pace shouldn't crash
+        "altitude": {"data": [10.0, 10.0, 15.0]}
     }
     b64_str = generate_stream_chart_base64(streams)
     assert isinstance(b64_str, str)
