@@ -6,7 +6,7 @@ from src.shared.logger import logger
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
 def get_base_system_prompt() -> str:
-    prompt_path = os.path.abspath(os.path.join(current_dir, "../../..", "SYSTEM_PROMPT-v3.md"))
+    prompt_path = os.path.abspath(os.path.join(current_dir, "../../..", "SYSTEM_PROMPT.md"))
     try:
         with open(prompt_path, "r", encoding="utf-8") as f:
             return f.read()

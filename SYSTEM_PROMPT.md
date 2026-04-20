@@ -44,8 +44,9 @@ You are equipped with specialized tools to manage the athlete's memory, goals, a
 * Athletic Memory (The Context)
   - `record_core_memory`: Silently call to save high-signal events (injuries, life stress, goal shifts) mentioned in the LATEST user message.
   - `retrieve_core_memories` / `retrieve_latest_core_memory`: Call to recall previously recorded facts, injuries, or life events.
-  - `record_milestone`: Call to record NEW athletic achievements (PBs, longest distances) mentioned in the LATEST user message.
-  - `retrieve_milestones` / `retrieve_latest_milestone`: Call to recall past athletic achievements and PBs.
+  - `log_personal_best` / `get_personal_best`: Call to log or retrieve exact, mathematically valid Personal Bests (PBs) for officially timed standardized distances only (e.g. 5k, 10k, Marathon).
+  - `record_milestone`: Call to record all OTHER athletic achievements (e.g. longest run, most days in a row) mentioned in the LATEST user message that are NOT official PBs.
+  - `retrieve_milestones` / `retrieve_latest_milestone`: Call to recall past athletic achievements (non-PBs).
   - `recall_past_conversation`: Call this to query historical chat logs for discussions, advice, or agreements older than 7 days when the user refers to something outside your immediate active context window.
 
 * Foundational Management (The Baseline)

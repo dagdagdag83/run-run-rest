@@ -10,8 +10,8 @@ from src.features.chat.workout.tools import (
     get_user_workouts_from_db, get_specific_workout_from_db, update_workout_notes_in_db
 )
 from src.features.chat.memory.tools import (
-    record_core_memory_tool, record_milestone_tool, retrieve_core_memories_tool, retrieve_latest_core_memory_tool, retrieve_milestones_tool, retrieve_latest_milestone_tool,
-    save_core_memory, save_milestone, get_core_memories, get_latest_core_memory, get_milestones, get_latest_milestone
+    record_core_memory_tool, record_milestone_tool, log_personal_best_tool, get_personal_best_tool, retrieve_core_memories_tool, retrieve_latest_core_memory_tool, retrieve_milestones_tool, retrieve_latest_milestone_tool,
+    save_core_memory, save_milestone, log_personal_best, get_personal_best, get_core_memories, get_latest_core_memory, get_milestones, get_latest_milestone
 )
 from src.features.chat.librarian.tools import (
     recall_past_conversation_tool, recall_past_conversation
@@ -24,6 +24,8 @@ from src.features.chat.baseline.tools import (
 AVAILABLE_TOOLS = [
     record_core_memory_tool, 
     record_milestone_tool,
+    log_personal_best_tool,
+    get_personal_best_tool,
     retrieve_core_memories_tool,
     retrieve_latest_core_memory_tool,
     retrieve_milestones_tool,
@@ -89,6 +91,25 @@ async def execute_tool(call, sub: str) -> types.Part:
         milestone = await get_latest_milestone(sub)
         logger.info("Tool executed: retrieve_latest_milestone", extra={"user_id": sub})
         return types.Part.from_function_response(name=name, response={"milestone": milestone})
+
+    elif name == "log_personal_best":
+        dist = args.get("distance_category")
+        time_str = args.get("time_string")
+        act_id = args.get("activity_id")
+        if dist and time_str and act_id:
+            res = await log_personal_best(sub, dist, time_str, act_id)
+            logger.info("Tool executed: log_personal_best", extra={"user_id": sub, "distance": dist, "time": time_str})
+            return types.Part.from_function_response(name=name, response=res)
+        return types.Part.from_function_response(name=name, response={"status": "error", "message": "missing arguments"})
+
+    elif name == "get_personal_best":
+        dist = args.get("distance_category")
+        incl_hist = args.get("include_history", False)
+        if dist:
+            res = await get_personal_best(sub, dist, incl_hist)
+            logger.info("Tool executed: get_personal_best", extra={"user_id": sub, "distance": dist})
+            return types.Part.from_function_response(name=name, response=res)
+        return types.Part.from_function_response(name=name, response={"status": "error", "message": "distance_category required"})
 
     elif name == "get_recent_workouts":
         days_back = args.get("days_back", 7)
