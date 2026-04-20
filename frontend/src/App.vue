@@ -7,8 +7,15 @@ const userFirstName = ref('Athlete');
 const chatInput = ref('');
 const isSubmitting = ref(false);
 const chatLogRef = ref(null);
+const zoomedImage = ref(null);
 
 const messages = ref([]);
+
+const handleProseClick = (event) => {
+    if (event.target.tagName === 'IMG') {
+        zoomedImage.value = event.target.src;
+    }
+};
 
 const scrollToBottom = () => {
     nextTick(() => {
@@ -140,6 +147,11 @@ onMounted(() => {
 
 <template>
   <div class="h-screen w-full flex flex-col items-center justify-center p-0 sm:p-4">
+    <!-- Image Zoom Modal -->
+    <div v-if="zoomedImage" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md cursor-zoom-out" @click="zoomedImage = null">
+        <img :src="zoomedImage" class="max-w-full max-h-full object-contain rounded-xl shadow-2xl border border-white/20" />
+    </div>
+
     <div class="w-full max-w-7xl h-full max-h-[95vh] bg-run-run-rest-surface flex flex-col sm:rounded-2xl shadow-2xl overflow-hidden border border-white/10">
       
       <!-- Header -->
@@ -182,7 +194,7 @@ onMounted(() => {
                 <div v-if="msg.role === 'user'" class="bg-run-run-rest-base text-slate-100 rounded-2xl rounded-tr-none px-4 py-3 text-sm leading-[1.8]">
                     {{ formatMessage(msg).contentText }}
                 </div>
-                <div v-else class="bg-run-run-rest-primary/20 border border-run-run-rest-primary/30 text-slate-100 rounded-2xl rounded-tl-none px-6 py-4 text-sm prose prose-invert prose-sm max-w-none prose-p:leading-[1.8] prose-li:leading-[1.8]" v-html="renderMarkdown(formatMessage(msg).contentText)"></div>
+                <div v-else class="bg-run-run-rest-primary/20 border border-run-run-rest-primary/30 text-slate-100 rounded-2xl rounded-tl-none px-6 py-4 text-sm prose prose-invert prose-sm max-w-none prose-p:leading-[1.8] prose-li:leading-[1.8] prose-img:cursor-zoom-in prose-img:rounded-md" @click="handleProseClick" v-html="renderMarkdown(formatMessage(msg).contentText)"></div>
               </div>
 
               <!-- Waiting indicator -->

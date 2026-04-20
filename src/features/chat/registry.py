@@ -6,8 +6,8 @@ from src.features.chat.training_block.tools import (
     set_training_block_in_db, update_training_habits_in_db, mark_block_achieved_in_db, get_training_blocks_from_db
 )
 from src.features.chat.workout.tools import (
-    get_recent_workouts_tool, get_specific_workout_tool, update_workout_notes_tool,
-    get_user_workouts_from_db, get_specific_workout_from_db, update_workout_notes_in_db
+    get_recent_workouts_tool, get_specific_workout_tool, update_workout_notes_tool, analyze_visual_streams_tool,
+    get_user_workouts_from_db, get_specific_workout_from_db, update_workout_notes_in_db, analyze_visual_streams_from_db
 )
 from src.features.chat.memory.tools import (
     record_core_memory_tool, record_milestone_tool, log_personal_best_tool, get_personal_best_tool, retrieve_core_memories_tool, retrieve_latest_core_memory_tool, retrieve_milestones_tool, retrieve_latest_milestone_tool,
@@ -42,7 +42,8 @@ AVAILABLE_TOOLS = [
     update_training_habits_tool,
     mark_block_achieved_tool,
     get_training_blocks_tool,
-    recall_past_conversation_tool
+    recall_past_conversation_tool,
+    analyze_visual_streams_tool
 ]
 
 async def execute_tool(call, sub: str) -> types.Part:
@@ -98,7 +99,7 @@ async def execute_tool(call, sub: str) -> types.Part:
         act_id = args.get("activity_id")
         if dist and time_str and act_id:
             res = await log_personal_best(sub, dist, time_str, act_id)
-            logger.info("Tool executed: log_personal_best", extra={"user_id": sub, "distance": dist, "time": time_str})
+            logger.info("Tool executed: log_personal_best", extra={"user_id": sub, "distance": dist, "time": time_str, "activity_id": act_id})
             return types.Part.from_function_response(name=name, response=res)
         return types.Part.from_function_response(name=name, response={"status": "error", "message": "missing arguments"})
 
@@ -107,7 +108,7 @@ async def execute_tool(call, sub: str) -> types.Part:
         incl_hist = args.get("include_history", False)
         if dist:
             res = await get_personal_best(sub, dist, incl_hist)
-            logger.info("Tool executed: get_personal_best", extra={"user_id": sub, "distance": dist})
+            logger.info("Tool executed: get_personal_best", extra={"user_id": sub, "distance": dist, "include_history": incl_hist})
             return types.Part.from_function_response(name=name, response=res)
         return types.Part.from_function_response(name=name, response={"status": "error", "message": "distance_category required"})
 
@@ -133,7 +134,7 @@ async def execute_tool(call, sub: str) -> types.Part:
         try: activity_id = int(activity_id) if activity_id is not None else 0
         except (ValueError, TypeError): activity_id = 0
         workout_str = await get_specific_workout_from_db(sub, activity_id)
-        logger.info("Tool executed: get_specific_workout", extra={"user_id": sub, "activity_id": activity_id, "workout_details": workout_str})
+        logger.info("Tool executed: get_specific_workout", extra={"user_id": sub, "activity_id": activity_id})
         return types.Part.from_function_response(name=name, response={"workout_details": workout_str})
 
     elif name == "update_workout_notes":
@@ -145,6 +146,24 @@ async def execute_tool(call, sub: str) -> types.Part:
             await update_workout_notes_in_db(sub, activity_id, notes)
             logger.info("Tool executed: update_workout_notes", extra={"user_id": sub, "activity_id": activity_id, "notes": notes})
         return types.Part.from_function_response(name=name, response={"status": "success"})
+
+    elif name == "analyze_visual_streams":
+        activity_id = args.get("activity_id")
+        try: activity_id = int(activity_id) if activity_id is not None else 0
+        except (ValueError, TypeError): activity_id = 0
+        
+        if activity_id:
+            res = await analyze_visual_streams_from_db(sub, activity_id)
+            if res.get("status") == "success":
+                b64_str = res.get("image_base64")
+                part = types.Part.from_function_response(name=name, response={"status": "Success. Use the provided image to analyze the telemetry."})
+                setattr(part, "_image_base64", b64_str)
+                logger.info("Tool executed: analyze_visual_streams", extra={"user_id": sub, "activity_id": activity_id, "has_image": True})
+                return part
+            else:
+                logger.warning("Tool executed: analyze_visual_streams (failed)", extra={"user_id": sub, "activity_id": activity_id})
+                return types.Part.from_function_response(name=name, response={"status": res.get("status")})
+        return types.Part.from_function_response(name=name, response={"status": "error", "message": "activity_id required"})
 
     elif name == "set_training_directive":
         focus = args.get("focus")
@@ -186,32 +205,47 @@ async def execute_tool(call, sub: str) -> types.Part:
         return types.Part.from_function_response(name=name, response={"biometrics": bio_str})
 
     elif name == "set_training_block":
+        phase_name = args.get("phase_name")
+        primary_target = args.get("primary_target")
+        secondary_targets = args.get("secondary_targets", [])
+        maintenance_habits = args.get("maintenance_habits", [])
+        target_date = args.get("target_date")
+        
         await set_training_block_in_db(
             user_id=sub,
-            phase_name=args.get("phase_name"),
-            primary_target=args.get("primary_target"),
-            secondary_targets=args.get("secondary_targets", []),
-            maintenance_habits=args.get("maintenance_habits", []),
-            target_date=args.get("target_date")
+            phase_name=phase_name,
+            primary_target=primary_target,
+            secondary_targets=secondary_targets,
+            maintenance_habits=maintenance_habits,
+            target_date=target_date
         )
-        logger.info("Tool executed: set_training_block", extra={"user_id": sub})
+        logger.info("Tool executed: set_training_block", extra={
+            "user_id": sub, 
+            "phase_name": phase_name, 
+            "primary_target": primary_target, 
+            "secondary_targets": secondary_targets, 
+            "maintenance_habits": maintenance_habits, 
+            "target_date": target_date
+        })
         return types.Part.from_function_response(name=name, response={"status": "success"})
 
     elif name == "update_training_habits":
-        await update_training_habits_in_db(sub, args.get("habits_to_add", []), args.get("habits_to_remove", []))
-        logger.info("Tool executed: update_training_habits", extra={"user_id": sub})
+        habits_to_add = args.get("habits_to_add", [])
+        habits_to_remove = args.get("habits_to_remove", [])
+        await update_training_habits_in_db(sub, habits_to_add, habits_to_remove)
+        logger.info("Tool executed: update_training_habits", extra={"user_id": sub, "habits_to_add": habits_to_add, "habits_to_remove": habits_to_remove})
         return types.Part.from_function_response(name=name, response={"status": "success"})
 
     elif name == "mark_block_achieved":
         summary = args.get("summary_notes", "No summary provided.")
         await mark_block_achieved_in_db(sub, summary)
-        logger.info("Tool executed: mark_block_achieved", extra={"user_id": sub})
+        logger.info("Tool executed: mark_block_achieved", extra={"user_id": sub, "summary_notes": summary})
         return types.Part.from_function_response(name=name, response={"status": "success"})
 
     elif name == "get_training_blocks":
         status_filter = args.get("status")
         blocks_str = await get_training_blocks_from_db(sub, status_filter)
-        logger.info("Tool executed: get_training_blocks", extra={"user_id": sub})
+        logger.info("Tool executed: get_training_blocks", extra={"user_id": sub, "status_filter": status_filter})
         return types.Part.from_function_response(name=name, response={"blocks": blocks_str})
 
     elif name == "recall_past_conversation":
@@ -221,7 +255,7 @@ async def execute_tool(call, sub: str) -> types.Part:
         except (ValueError, TypeError): approximate_days_ago = 30
         if topic:
             summary = await recall_past_conversation(sub, topic, approximate_days_ago)
-            logger.info("Tool executed: recall_past_conversation", extra={"user_id": sub, "topic": topic})
+            logger.info("Tool executed: recall_past_conversation", extra={"user_id": sub, "topic": topic, "approximate_days_ago": approximate_days_ago})
             return types.Part.from_function_response(name=name, response={"summary": summary})
         return types.Part.from_function_response(name=name, response={"error": "topic required"})
 

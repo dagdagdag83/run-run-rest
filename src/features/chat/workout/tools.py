@@ -3,6 +3,7 @@ from google.cloud import firestore
 from datetime import datetime, timezone, timedelta
 from src.shared.dependencies import db
 from src.shared.logger import logger
+from src.features.strava.streams import fetch_activity_streams, generate_stream_chart_base64
 
 get_recent_workouts_tool = {
     "function_declarations": [
@@ -71,6 +72,25 @@ update_workout_notes_tool = {
                     }
                 },
                 "required": ["activity_id", "notes"]
+            }
+        }
+    ]
+}
+
+analyze_visual_streams_tool = {
+    "function_declarations": [
+        {
+            "name": "analyze_visual_streams",
+            "description": "Use this tool to visually analyze the high-frequency telemetry (Heart Rate vs. Pace) for a specific workout. The tool generates a real-time Plotly graph and returns it to you multimodally. Use this to spot trends like cardiac drift, pacing consistency, or interval structure that might not be obvious from the summary metrics. You must already know the activity_id.",
+            "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                    "activity_id": {
+                        "type": "INTEGER",
+                        "description": "The Strava activity_id of the workout."
+                    }
+                },
+                "required": ["activity_id"]
             }
         }
     ]
@@ -202,3 +222,24 @@ async def update_workout_notes_in_db(user_id: str, activity_id: int, notes: str)
         await db.put(f"users/{user_id}/workouts", str(activity_id), {"user_notes": notes}, merge=True)
     except Exception as e:
         logger.error(f"Unexpected error updating notes for workout {activity_id}: {e}")
+
+async def analyze_visual_streams_from_db(user_id: str, activity_id: int) -> dict:
+    """
+    Fetches streams and generates a visual base64 chart to be returned for multimodal LLM analysis.
+    Returns a dict with {"status": "...", "image_base64": "..."}
+    """
+    logger.info(f"Analyzing visual streams for user {user_id}, activity {activity_id}")
+    streams = await fetch_activity_streams(activity_id, user_id)
+    if not streams:
+        return {"status": "Error: Could not retrieve streams from Strava. Please advise the user."}
+        
+    if "error" in streams:
+        return {"status": f"Error: {streams['error']}"}
+
+    try:
+        b64_str = generate_stream_chart_base64(streams)
+        return {"status": "success", "image_base64": b64_str}
+    except Exception as e:
+        logger.error(f"Error generating Plotly chart: {e}")
+        return {"status": f"Error: Could not generate visualization. {e}"}
+

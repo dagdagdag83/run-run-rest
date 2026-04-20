@@ -112,17 +112,28 @@ async def chat_interaction(payload: ChatPayload, request: Request, user: dict = 
             logger.info(f"Gemini API call completed", extra={"user_id": sub, "duration_s": round(duration, 2), "iteration": 0})
             
             iterations = 0
+            all_generated_images = []
             while response.function_calls and iterations < 5:
                 iterations += 1
                 # Add model's tool calls to the history context
                 genai_contents.append(response.candidates[0].content)
                 
                 function_response_parts = []
+                new_images = []
                 for call in response.function_calls:
                     resp_part = await execute_tool(call, sub)
                     function_response_parts.append(resp_part)
+                    if hasattr(resp_part, "_image_base64"):
+                        new_images.append(resp_part._image_base64)
+                        all_generated_images.append(resp_part._image_base64)
                 
                 genai_contents.append(types.Content(role="function", parts=function_response_parts))
+                
+                if new_images:
+                    import base64
+                    img_parts = [types.Part.from_bytes(data=base64.b64decode(b64), mime_type="image/png") for b64 in new_images]
+                    img_parts.append(types.Part.from_text(text="Here is the requested visual chart data. Please summarize it for the user."))
+                    genai_contents.append(types.Content(role="user", parts=img_parts))
                 
                 # Resubmit with function results to get final conversational response
                 logger.info(f"Resubmitting to Gemini model with tool responses", extra={"user_id": sub, "iteration": iterations})
@@ -136,7 +147,12 @@ async def chat_interaction(payload: ChatPayload, request: Request, user: dict = 
                 logger.info(f"Gemini API tool resubmission completed", extra={"user_id": sub, "duration_s": round(duration, 2), "iteration": iterations})
                 
             bot_text = response.text or "I'm sorry, I couldn't generate a response."
+            
+            for b64 in all_generated_images:
+                bot_text += f"\n\n![Workout Stream](data:image/png;base64,{b64})"
+                
             messages.append({"role": "assistant", "content": bot_text})
+
         except Exception as e:
             logger.error(f"Error calling Gemini: {e}")
             messages.append({"role": "assistant", "content": "Sorry, I am facing technical difficulties connecting to my cognitive cores."})
