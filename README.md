@@ -2,7 +2,7 @@
 
 ## The Highly Opinionated, Autonomous Agentic Running Coach
 
-### Check it out: <a href="https://runrun.rest">https://runrun.rest</a> 👀🤩
+### Check it out: <a href="https://runrun.rest">https://runrun.rest</a> 👀🤩 (**🛑DOES NOT WORK AT THE MOMENT, sorry, not sorry! 🛑**
 
 **run-run-rest** isn't just a chatbot; it's a serverless, agentic fitness harness operating as your autonomous, long-term athletic coach. Engineered to ingest live webhook data directly from Strava, it maintains a deep, evolving cognitive memory of your physiology, your highs and lows, and your precise training blocks. 
 
